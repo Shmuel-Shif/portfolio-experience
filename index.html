@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#ffffff">
+    <title>Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main id="experience" class="experience" data-phase="loading" data-scroll-offset="0">
+      <!-- Future scroll-driven scene mounts here. -->
+      <div class="experience__viewport" data-stage-mount aria-hidden="true"></div>
+
+      <div class="intro">
+        <span class="intro__dot" aria-hidden="true"></span>
+
+        <div class="loader" data-loader-meter>
+          <div
+            class="loader__track"
+            dir="ltr"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-label="טעינה"
+            data-loader-bar
+          >
+            <span class="loader__fill" data-loader-fill></span>
+          </div>
+          <p class="loader__percent" data-loader-percent dir="ltr">0%</p>
+          <p class="loader__status" data-loader-status role="alert"></p>
+        </div>
+
+        <p class="scroll-hint" data-scroll-hint aria-hidden="true">
+          <span class="scroll-hint__text">גללו כדי להיכנס</span>
+          <span class="scroll-hint__motion" aria-hidden="true">
+            <span class="scroll-hint__cue"></span>
+          </span>
+        </p>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
