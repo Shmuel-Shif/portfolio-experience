@@ -9,9 +9,18 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <main id="experience" class="experience" data-phase="loading" data-scroll-offset="0">
-      <!-- Future scroll-driven scene mounts here. -->
-      <div class="experience__viewport" data-stage-mount aria-hidden="true"></div>
+    <main
+      id="experience"
+      class="experience"
+      data-phase="loading"
+      data-mode="opening"
+      data-scroll-offset="0"
+      data-progress="0"
+    >
+      <!-- Three.js chaos scene mounts here and is revealed inside the black circle. -->
+      <div class="experience__viewport" data-stage-mount data-scene="pending" aria-hidden="true"></div>
+      <!-- Future business content starts after the opening timeline. -->
+      <div class="experience__content" data-content hidden></div>
 
       <div class="intro">
         <span class="intro__dot" aria-hidden="true"></span>
