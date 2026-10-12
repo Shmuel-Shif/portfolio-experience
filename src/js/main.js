@@ -95,8 +95,7 @@ function createExperience(root) {
     const arrivalHalo = root.querySelector('.site-arrival__halo');
     if (arrivalLogo) {
       arrivalLogo.style.opacity = logoReveal.toFixed(3);
-      if (root.dataset.sealed === 'true') arrivalLogo.style.transform = 'none';
-      else arrivalLogo.style.transform = `translateY(${((1 - logoReveal) * 28).toFixed(1)}px) scale(${(0.96 + logoReveal * 0.04).toFixed(3)})`;
+      arrivalLogo.style.transform = 'none';
     }
     if (arrivalHalo) arrivalHalo.style.opacity = root.dataset.sealed === 'true' ? logoReveal.toFixed(3) : '1';
     const siteHeader = root.querySelector('[data-site-header]');
@@ -134,6 +133,22 @@ function createExperience(root) {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) scroll.wake();
   });
+  const menuToggle = root.querySelector('[data-menu-toggle]');
+  const siteHeader = root.querySelector('[data-site-header]');
+  if (menuToggle && siteHeader) {
+    menuToggle.addEventListener('click', () => {
+      const open = siteHeader.dataset.menu !== 'open';
+      if (open) siteHeader.dataset.menu = 'open';
+      else delete siteHeader.dataset.menu;
+      menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    siteHeader.querySelectorAll('.site-nav a').forEach((link) => {
+      link.addEventListener('click', () => {
+        delete siteHeader.dataset.menu;
+        menuToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
   if (!skipOpening) {
     mountOpeningScene(opening, stageMount, quality, {
       onProgress(ratio) {

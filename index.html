@@ -42,7 +42,10 @@
         <a class="site-header__brand" href="#site-body">
           <img class="site-header__mark" src="assets/logo/logo.png" alt="שמואל שיף" width="52" height="52">
         </a>
-        <nav class="site-nav" aria-label="ניווט">
+        <button class="site-nav__toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-menu" aria-label="תפריט">
+          <span class="site-nav__bars" aria-hidden="true"></span>
+        </button>
+        <nav class="site-nav" id="site-menu" aria-label="ניווט">
           <a href="#site-body">עבודות</a>
           <a href="#site-body">שירותים</a>
           <a href="#site-body">קשר</a>

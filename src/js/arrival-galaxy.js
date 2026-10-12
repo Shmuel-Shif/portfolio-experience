@@ -64,7 +64,7 @@ export function createArrivalGalaxy(mount, quality) {
     if (fadeStamp === 0) fadeStamp = now;
     const dt = Math.min(0.05, Math.max(0, (now - fadeStamp) / 1000));
     fadeStamp = now;
-    reveal = Math.min(1, reveal + dt / 1.35);
+    reveal = Math.min(1, reveal + dt / 2.1);
     paint();
     if (shown && reveal < 1) fadeId = requestAnimationFrame(fadeStep);
   }
@@ -78,13 +78,18 @@ export function createArrivalGalaxy(mount, quality) {
 
   function setShown(visible) {
     if (!renderer) return;
+    const host = mount.closest('.experience');
     renderer.domElement.style.visibility = visible ? 'visible' : 'hidden';
+    if (!host) return;
+    if (visible) host.dataset.galaxy = 'live';
+    else delete host.dataset.galaxy;
   }
 
   function resize() {
-    if (!ready || !renderer || !mount) return;
-    const nextWidth = mount.clientWidth || window.innerWidth;
-    const nextHeight = mount.clientHeight || window.innerHeight;
+    if (!ready || !renderer) return;
+    const host = mount.closest('.experience') || mount;
+    const nextWidth = host.clientWidth || window.innerWidth;
+    const nextHeight = host.clientHeight || window.innerHeight;
     if (Math.abs(nextWidth - width) < 2 && Math.abs(nextHeight - height) < 2) return;
     width = nextWidth;
     height = nextHeight;
@@ -111,7 +116,8 @@ export function createArrivalGalaxy(mount, quality) {
     renderer.domElement.className = 'arrival-sky__canvas';
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.style.visibility = 'hidden';
-    mount.appendChild(renderer.domElement);
+    const host = mount.closest('.experience') || mount;
+    host.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
@@ -136,7 +142,7 @@ export function createArrivalGalaxy(mount, quality) {
           vec4 clip = projectionMatrix * view;
           vec2 ndc = clip.xy / max(0.001, abs(clip.w));
           float center = smoothstep(0.12, 0.5, length(ndc * vec2(0.78, 1.15)));
-          float appear = aReveal < 0.0 ? 1.0 : smoothstep(aReveal, min(aReveal + 0.28, 0.92), max(uReveal, 0.0));
+          float appear = aReveal < 0.0 ? smoothstep(0.0, 0.72, uReveal) : smoothstep(aReveal, aReveal + 0.42, uReveal);
           vColor = aColor;
           vAlpha = 0.82 * mix(0.46, 1.0, center) * mix(0.05, 1.0, appear);
           gl_PointSize = clamp(aSize * (112.0 / max(1.0, -view.z)), 0.35, 3.2);
@@ -221,7 +227,7 @@ export function createArrivalGalaxy(mount, quality) {
     const points = new THREE.Points(pointGeometry(THREE, positions, colors, sizes, phases, twinkles, drifts), fieldMaterial);
     if (kind === 'stars') {
       const appear = points.geometry.attributes.aReveal;
-      for (let index = 0; index < count; index += 1) appear.setX(index, (index % 4) * 0.16);
+      for (let index = 0; index < count; index += 1) appear.setX(index, (index % 4) * 0.18);
       appear.needsUpdate = true;
     }
     return points;
