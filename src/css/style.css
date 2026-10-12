@@ -170,11 +170,6 @@ body {
   flex: none;
 }
 
-.site-header[data-surface="paper"] .site-header__brand img {
-  mix-blend-mode: multiply;
-  filter: invert(1) hue-rotate(180deg);
-}
-
 .site-header__name {
   margin: 0;
   font-family: Rubik, "Segoe UI", sans-serif;
@@ -260,8 +255,13 @@ body {
   height: var(--dot-size);
   border-radius: 50%;
   background: #000000;
-  opacity: calc(1 - min(var(--scene-reveal, 0), 1));
+  opacity: 0;
   transform: translate3d(-50%, -50%, 0);
+  animation: none;
+}
+
+.experience[data-phase="ready"] .intro__dot {
+  opacity: calc(1 - min(var(--scene-reveal, 0), 1));
   animation: dot-float 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 

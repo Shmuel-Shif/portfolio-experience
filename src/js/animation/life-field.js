@@ -160,7 +160,7 @@ export function createLifeField(THREE, level) {
     const cellsIn = smoothstep(clamp01((phase.t - 0.09) / 0.05));
     const imagesLead = phase.t > 0.1;
 
-    cells.visible = cellsIn > 0.02 && phase.t < 0.43;
+    cells.visible = cellsIn > 0.02 && phase.spiralIn < 0.98;
     const portrait = camera && camera.aspect < 1;
     const half = portrait ? Math.tan((40 * Math.PI) / 360) * camera.aspect : 1;
     const dustFade = dustIn * (1 - smoothstep(clamp01((pull - 0.2) / 0.62)));

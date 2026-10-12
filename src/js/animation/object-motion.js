@@ -2,41 +2,48 @@ import { PATH_SPAN, phases, smoothstep, clamp01 } from './timeline.js';
 
 const MEAT = '41-surreal-burger';
 const DAIRY = '42-planet-ice-cream';
+const LEAD = 156;
 
 export function assignHomes(actors, rng) {
   const random = rng || (() => 0.5);
-  const last = Math.max(1, actors.length - 1);
   actors.forEach((actor, pathIndex) => {
-    const side = pathIndex % 2 === 0 ? -1 : 1;
-    const lane = (pathIndex % 5) - 2;
-    const near = pathIndex % 6 === 0;
-    const far = pathIndex % 6 === 3;
-    const drift = random();
-    actor.home = {
-      x: Math.sin(pathIndex * 1.67 + drift * 2) * (near ? 0.55 : 2.4) + lane * (near ? 0.2 : 0.85),
-      y: Math.cos(pathIndex * 1.21 + drift) * (near ? 0.35 : 1.45) + ((pathIndex % 3) - 1) * 0.28,
-      z: -42 - (pathIndex / last) * (PATH_SPAN - 26),
-    };
-    actor.entry = {
-      x: side * (0.15 + random() * 0.45),
-      y: (random() - 0.5) * 0.4,
-    };
-    actor.exit = side;
-    actor.near = near;
-    actor.baseScale = (near ? 1.04 : far ? 0.54 : 0.79) + random() * 0.09;
-    if (far) actor.home.x *= 1.45;
-    actor.spin = (random() < 0.5 ? -1 : 1) * (0.04 + random() * 0.05);
-    actor.roll = (random() - 0.5) * 0.12;
-    actor.swirl = random() * Math.PI * 2;
-    actor.turns = (random() < 0.5 ? -1 : 1) * (0.85 + random() * 1.15);
-    actor.orbit = 0.85 + random() * 2.4;
-    actor.sink = 0.8 + random() * 2.2;
-    actor.delay = random() * 0.34;
+    placeActor(actor, pathIndex, actors.length, random);
   });
-  separateFood(actors);
+  separateFood(actors, random);
 }
 
-function separateFood(actors) {
+function placeActor(actor, pathIndex, count, random) {
+  const firstZ = 8 - LEAD;
+  const lastZ = 8 - PATH_SPAN - 22;
+  const gap = (firstZ - lastZ) / Math.max(1, count - 1);
+  const side = pathIndex % 2 === 0 ? -1 : 1;
+  const lane = 2.35 + (pathIndex % 4) * 0.32;
+  const altitude = ((pathIndex % 5) - 2) * 0.5 + Math.cos(pathIndex * 0.73) * 0.18;
+  actor.exit = side;
+  actor.lane = lane;
+  actor.near = pathIndex % 8 === 0;
+  actor.home = {
+    x: side * lane,
+    y: altitude,
+    z: firstZ - pathIndex * gap,
+  };
+  actor.entry = {
+    x: 0.48 + (pathIndex % 5) * 0.14,
+    y: altitude * 0.22,
+  };
+  actor.baseScale = actor.near ? 1.02 : 0.84;
+  if (actor.kind === 'card') actor.baseScale = actor.variant === 'code' || actor.variant === 'plate' ? 0.9 : 1.02;
+  if (actor.kind === 'word') actor.baseScale = actor.variant === 'float' ? 0.62 : 0.78;
+  actor.spin = (random() < 0.5 ? -1 : 1) * (0.04 + random() * 0.05);
+  actor.roll = (random() - 0.5) * 0.12;
+  actor.swirl = random() * Math.PI * 2;
+  actor.turns = (random() < 0.5 ? -1 : 1) * (0.85 + random() * 1.15);
+  actor.orbit = 1.4 + random() * 2.2;
+  actor.sink = 0.8 + random() * 2.2;
+  actor.delay = (pathIndex / Math.max(1, count - 1)) * 0.84;
+}
+
+function separateFood(actors, random) {
   const meat = actors.findIndex((actor) => actor.id === MEAT);
   const dairy = actors.findIndex((actor) => actor.id === DAIRY);
   if (meat < 0 || dairy < 0) return;
@@ -46,17 +53,51 @@ function separateFood(actors) {
   const swap = actors[destination];
   actors[destination] = actors[dairy];
   actors[dairy] = swap;
-  actors.forEach((actor, pathIndex) => {
-    const last = Math.max(1, actors.length - 1);
-    actor.home.z = -42 - (pathIndex / last) * (PATH_SPAN - 26);
-  });
+  actors.forEach((actor, pathIndex) => placeActor(actor, pathIndex, actors.length, random));
 }
 
-export function applyObjects(actors, cameraZ, progress, reduced, portrait, viewAspect) {
+function gentlePull(suction, delay) {
+  return smoothstep(clamp01((suction - delay) / 0.16));
+}
+
+function suctionPoint(flightX, flightY, flightZ, pull, actor, basis, portrait, viewAspect) {
+  const fov = ((portrait ? 40 : 46) * Math.PI) / 360;
+  const aspect = Math.max(portrait ? 0.42 : 0.75, viewAspect || 1);
+  const ringDepth = portrait ? 9.2 : 11;
+  const half = Math.min(Math.tan(fov) * ringDepth * aspect, Math.tan(fov) * ringDepth);
+  const relX = flightX - basis.x;
+  const relY = flightY - basis.y;
+  const relZ = flightZ - basis.z;
+  const rightN = relX * basis.rx + relY * basis.ry + relZ * basis.rz;
+  const upN = relX * basis.ux + relY * basis.uy + relZ * basis.uz;
+  const angle = Math.atan2(upN, rightN || (actor.exit || 1));
+  const band = 0.34 + Math.abs(Math.sin((actor.swirl || 0) * 3.1)) * 0.46;
+  const tighten = smoothstep(clamp01((pull - 0.2) / 0.8));
+  const radius = half * band * (1 - tighten);
+  const depth = ringDepth + (1.15 - ringDepth) * tighten;
+  const spin = pull * actor.turns * Math.PI * 2.15;
+  const swirlX = basis.x + basis.fx * depth + basis.rx * Math.cos(angle + spin) * radius + basis.ux * Math.sin(angle + spin) * radius;
+  const swirlY = basis.y + basis.fy * depth + basis.ry * Math.cos(angle + spin) * radius + basis.uy * Math.sin(angle + spin) * radius;
+  const swirlZ = basis.z + basis.fz * depth + basis.rz * Math.cos(angle + spin) * radius + basis.uz * Math.sin(angle + spin) * radius;
+  const shoulderR = half * 0.86;
+  const shoulderD = ringDepth;
+  const shoulderX = basis.x + basis.fx * shoulderD + basis.rx * Math.cos(angle) * shoulderR + basis.ux * Math.sin(angle) * shoulderR * 0.62;
+  const shoulderY = basis.y + basis.fy * shoulderD + basis.ry * Math.cos(angle) * shoulderR + basis.uy * Math.sin(angle) * shoulderR * 0.62;
+  const shoulderZ = basis.z + basis.fz * shoulderD + basis.rz * Math.cos(angle) * shoulderR + basis.uz * Math.sin(angle) * shoulderR * 0.62;
+  const join = smoothstep(clamp01(pull / 0.38));
+  const stay = (1 - join) * (1 - join);
+  const bend = 2 * (1 - join) * join;
+  const arrive = join * join;
+  return {
+    x: stay * flightX + bend * shoulderX + arrive * swirlX,
+    y: stay * flightY + bend * shoulderY + arrive * swirlY,
+    z: stay * flightZ + bend * shoulderZ + arrive * swirlZ,
+  };
+}
+
+export function applyObjects(actors, cameraZ, progress, reduced, portrait, viewAspect, basis) {
   const phase = phases(progress);
   const motion = reduced ? 0.28 : 1;
-  const coreZ = -PATH_SPAN - 2;
-  const half = portrait ? Math.tan((40 * Math.PI) / 360) * Math.max(0.42, viewAspect || 0.5) : 0;
   let prominent = 0;
 
   actors.forEach((actor) => {
@@ -65,46 +106,54 @@ export function applyObjects(actors, cameraZ, progress, reduced, portrait, viewA
       return;
     }
     const ahead = cameraZ - actor.home.z;
-    const span = actor.near ? 46 : 62;
-    const pass = clamp01((span + 8 - ahead) / span);
+    const along = clamp01((42 - ahead) / 42);
+    const curve = along * along * (3 - 2 * along);
+    const bow = Math.sin(along * Math.PI);
     const side = actor.exit || 1;
-    const reach = portrait
-      ? Math.max(0.72, Math.min(2.3, half * (actor.near ? 6.2 : 8.4)))
-      : (actor.near ? 7.6 : 9.4);
-    let x = side * (reach - pass * reach * 2) * motion;
-    let y = (actor.home.y * Math.sin(pass * Math.PI) + actor.entry.y * (1 - pass)) * (portrait ? 0.7 : 1);
-    let z = actor.home.z - (1 - pass) * 6 + pass * 3;
-    const pull = smoothstep(clamp01((phase.suction - actor.delay) / Math.max(0.12, 1 - actor.delay)));
-    const angle = actor.swirl + pull * pull * actor.turns * Math.PI * 2.6;
-    const radius = actor.orbit * (1 - pull);
-    x = x * (1 - pull) + Math.cos(angle) * radius;
-    y = y * (1 - pull) + Math.sin(angle * 0.85) * radius * 0.62;
-    z = z * (1 - pull) + (coreZ - pull * actor.sink) * pull;
-    const approach = 0.38 + pass * 0.42;
-    const close = actor.near ? smoothstep(clamp01((pass - 0.55) / 0.35)) * 0.22 : 0;
-    const depthBoost = portrait ? (actor.near ? 1.12 : 1.28) : 1;
-    const scale = Math.min(portrait ? 1.55 : 1.27, actor.baseScale * (approach + close) * depthBoost * (1 - pull * 0.99));
+    const lane = Math.max(portrait ? 1.12 : 2.25, (actor.lane || 2.4) * (portrait ? 0.46 : 1));
+    const entryX = side * (actor.entry.x || 0.5) * (portrait ? 0.46 : 1);
+    const flightX = (entryX + (side * lane - entryX) * curve + bow * side * (portrait ? 0.12 : 0.22)) * motion;
+    const flightY = ((actor.entry.y || 0) + (actor.home.y - (actor.entry.y || 0)) * curve) * (portrait ? 0.7 : 1);
+    const flightZ = actor.home.z + along * 1.4;
+    const minDist = portrait ? 8.6 : 6.6;
+    const pull = gentlePull(phase.suction, actor.delay);
+    const aimed = basis && pull > 0
+      ? suctionPoint(flightX, flightY, flightZ, pull, actor, basis, portrait, viewAspect)
+      : null;
+    const x = aimed ? aimed.x : flightX;
+    const y = aimed ? aimed.y : flightY;
+    const z = aimed ? aimed.z : flightZ;
+    const flightDistance = cameraZ - flightZ;
+    const closeness = clamp01((28 - Math.max(flightDistance, 0)) / 20);
+    const approach = 0.12 + closeness * 0.62;
+    const unit = actor.kind === 'card' ? 0.95 : actor.kind === 'word' ? 0.36 : 0.82;
+    const halfH = Math.tan(((portrait ? 40 : 46) * Math.PI) / 360) * Math.max(flightDistance, minDist);
+    const halfW = halfH * Math.max(portrait ? 0.42 : 0.75, viewAspect || 1);
+    const angularCap = (halfW * (portrait ? 0.46 : 0.36)) / unit;
+    const flightScale = Math.min(portrait ? 1.12 : 1.02, angularCap, actor.baseScale * approach * (portrait ? 1.05 : 1));
+    const scale = flightScale * (1 - smoothstep(clamp01((pull - 0.05) / 0.9)));
     const imagesOpen = smoothstep(clamp01((phase.t - 0.1) / 0.04));
-    const swallow = smoothstep(clamp01((pull - 0.92) / 0.08));
-    const flying = imagesOpen > 0.02 && pull < 0.04 && pass > 0.02 && pass < 0.995 && phase.spiral < 0.35;
-    const sucking = pull >= 0.04 && swallow < 0.98 && phase.shrink < 0.01 && phase.white < 0.01 && scale > 0.012;
-    const show = (flying || sucking) && phase.white < 0.01 && phase.shrink < 0.01;
+    const body = unit * Math.max(scale, flightScale);
+    const outside = Math.abs(flightX) > halfW + body * 0.35 || Math.abs(flightY) > halfH + body * 0.45;
+    const waiting = ahead > 42;
+    const flying = imagesOpen > 0.02 && pull < 0.02 && ahead > -4 && !waiting && !outside;
+    const sucking = pull >= 0.02 && pull < 0.992 && phase.white < 0.01;
+    const show = (flying && phase.shrink < 0.01 || sucking) && phase.white < 0.01;
     if (!show) {
       if (actor.object.visible) actor.object.visible = false;
       return;
     }
     const aspect = actor.aspect || 1;
-    const leave = smoothstep(clamp01((pass - 0.84) / 0.16));
     actor.object.position.set(x, y, z);
     actor.object.rotation.set(
       0,
       0,
-      actor.roll + Math.sin(progress * Math.PI * 2 + actor.swirl) * actor.spin * motion * (1 - pull) + pull * pull * actor.turns
+      actor.roll + Math.sin(progress * Math.PI * 2 + actor.swirl) * actor.spin * motion * (1 - pull) + pull * actor.turns * Math.PI * 2.15
     );
     actor.object.scale.set(Math.max(scale, 0.001) * aspect, Math.max(scale, 0.001), 1);
-    if (actor.material) actor.material.opacity = (1 - leave * 0.45) * (flying ? imagesOpen : 1) * (1 - swallow);
+    if (actor.material) actor.material.opacity = flying ? imagesOpen : 1;
     actor.object.visible = true;
-    if (flying && pass > 0.2 && pass < 0.8) prominent += 1;
+    if (flying && flightDistance > 8 && flightDistance < 22) prominent += 1;
   });
 
   return prominent;

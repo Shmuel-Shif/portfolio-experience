@@ -1,5 +1,6 @@
 import { OBJECT_FILES, familyOf } from './image-catalog.js';
 import { assignHomes } from '../animation/object-motion.js';
+import { createFlightStories, weaveStories } from './flight-stories.js';
 
 const sessionSeed = Math.floor(Math.random() * 0x7fffffff);
 
@@ -29,6 +30,7 @@ export function createImageCast(THREE, level) {
     const id = file.replace(/\.png$/i, '');
     return {
       id,
+      kind: 'image',
       file,
       family: familyOf(file),
       object: mesh,
@@ -36,6 +38,13 @@ export function createImageCast(THREE, level) {
       ready: false,
     };
   });
+  const stories = createFlightStories(THREE);
+  stories.forEach((story) => {
+    geometries.push(story.geometry);
+    materials.push(story.material);
+    textures.push(story.texture);
+  });
+  weaveStories(actors, stories);
   assignHomes(actors, rng);
   const maxEdge = level === 'low' ? 384 : level === 'medium' ? 480 : 560;
 
@@ -49,19 +58,20 @@ export function createImageCast(THREE, level) {
     async load(onProgress, onReady) {
       let finished = 0;
       let opened = false;
-      const essential = Math.min(18, actors.length);
+      const images = actors.filter((actor) => actor.kind === 'image');
+      const essential = Math.min(18, images.length);
       const report = () => {
         if (onProgress) onProgress(Math.min(1, finished / essential));
       };
       const tryOpen = () => {
         if (opened || !onReady) return;
-        const enough = this.loaded >= 12 || finished >= actors.length || (finished >= essential && this.loaded > 0);
+        const enough = this.loaded >= 12 || finished >= images.length || (finished >= essential && this.loaded > 0);
         if (!enough) return;
         opened = true;
         onReady();
       };
       report();
-      await mapPool(actors, 2, async (actor) => {
+      await mapPool(images, 2, async (actor) => {
         try {
           const image = await loadImage(`assets/images/objects/${actor.file}`);
           if (opened) await idleGap();

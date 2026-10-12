@@ -80,7 +80,7 @@ export function createSpiral(THREE) {
       material.uniforms.uGrow.value = grow * (aspect < 0.85 ? 1.2 : 1);
       material.uniforms.uColor.value = phase.color || 0;
       material.uniforms.uGlow.value = phase.glow || 0;
-      const heldSpin = (phase.spiralIn || 0) * 4;
+      const heldSpin = (phase.spiralIn || 0) * 4 + (phase.suction || 0) * 18 + (phase.color || 0) * 4;
       const spinElapsed = Math.max(0, Number(spinExtra) || 0);
       material.uniforms.uSpin.value = heldSpin + (22 * 0.44) / 2.05 * spinElapsed;
     },

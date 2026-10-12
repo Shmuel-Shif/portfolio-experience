@@ -1,4 +1,5 @@
-export const PATH_SPAN = 168;
+export const PATH_SPAN = 548;
+export const FLIGHT_END = 0.58;
 
 export function clamp01(value) {
   if (!Number.isFinite(value)) return 0;
@@ -10,13 +11,18 @@ export function smoothstep(value) {
   return t * t * (3 - 2 * t);
 }
 
+function gentleStep(value) {
+  const t = clamp01(value);
+  return t * 0.22 + smoothstep(t) * 0.78;
+}
+
 export function phases(progress) {
   const t = clamp01(progress);
-  const flightU = clamp01(t / 0.36);
+  const flightU = clamp01(t / FLIGHT_END);
   const flight = flightU + (smoothstep(flightU) - flightU) * 0.15;
-  const suction = smoothstep(clamp01((t - 0.24) / 0.16));
-  const spiralIn = smoothstep(clamp01((t - 0.34) / 0.07));
-  const color = smoothstep(clamp01((t - 0.44) / 0.38));
+  const suction = gentleStep((t - FLIGHT_END) / 0.32);
+  const spiralIn = smoothstep(clamp01((t - FLIGHT_END) / 0.045));
+  const color = smoothstep(clamp01((t - 0.78) / 0.1));
   const shrink = smoothstep(clamp01((t - 0.88) / 0.018));
   const glow = smoothstep(clamp01((t - 0.864) / 0.056));
   const white = smoothstep(clamp01((t - 0.922) / 0.008));
@@ -51,10 +57,10 @@ export function phases(progress) {
   };
 }
 
-export const ILLUSION_GATE = 0.34;
+export const ILLUSION_GATE = FLIGHT_END;
 export const ILLUSION_DONE = 0.933;
 const SUCTION_SLOW = 1.45;
-const ILLUSION_SUCK = 2.6 * SUCTION_SLOW;
+const ILLUSION_SUCK = 10;
 const ILLUSION_HOLD = 2.05;
 const ILLUSION_EXTEND = 2.2;
 const ILLUSION_FINISH = 1.15 * SUCTION_SLOW;
@@ -62,7 +68,7 @@ const ILLUSION_FINISH = 1.15 * SUCTION_SLOW;
 export function illusionProgress(elapsed, origin = ILLUSION_GATE) {
   const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
   const start = Math.min(0.84, Math.max(ILLUSION_GATE, origin));
-  const suckEnd = 0.42;
+  const suckEnd = 0.7;
   const holdEnd = 0.86;
   const suck = ILLUSION_SUCK;
   const hold = ILLUSION_HOLD;
@@ -75,7 +81,8 @@ export function illusionProgress(elapsed, origin = ILLUSION_GATE) {
   }
   if (time < suck) {
     const from = Math.min(start, suckEnd);
-    return from + (suckEnd - from) * smoothstep(time / suck);
+    const u = time / suck;
+    return from + (suckEnd - from) * (u * 0.22 + smoothstep(u) * 0.78);
   }
   if (time < afterHold) {
     const u = (time - suck) / hold;

@@ -4,7 +4,7 @@ import { mountOpeningScene } from './opening-scene.js';
 const ASSET_MANIFEST = [];
 const OPENING_MIN = 1200;
 const OPENING_MAX = 2600;
-const SCENE_TO_CIRCLE = 1;
+const SCENE_TO_CIRCLE = 2;
 
 function boot() {
   const root = document.getElementById('experience');
@@ -33,9 +33,6 @@ function createExperience(root) {
     const circleShare = 1 / (1 + SCENE_TO_CIRCLE);
     const circleProgress = clamp01(sample.openingProgress / circleShare);
     const scrolledScene = clamp01((sample.openingProgress - circleShare) / (1 - circleShare));
-    if (!scroll.isIllusion() && !scroll.isEpilogue() && scrolledScene >= ILLUSION_GATE) {
-      scroll.beginIllusion(scrolledScene);
-    }
     let sceneProgress = scrolledScene;
     if (scroll.isIllusion()) {
       sceneProgress = sample.epilogue == null

@@ -76,7 +76,13 @@ function createOpeningScene(THREE, mount, quality, cast) {
 
   const scene = new THREE.Scene();
   scene.background = null;
-  const camera = new THREE.PerspectiveCamera(48, 1, 0.08, 240);
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.08, 980);
+  const viewForward = new THREE.Vector3();
+  const viewRight = new THREE.Vector3();
+  const viewUp = new THREE.Vector3();
+  const viewBasis = {
+    x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: -1, rx: 1, ry: 0, rz: 0, ux: 0, uy: 1, uz: 0,
+  };
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
   const sun = new THREE.DirectionalLight(0xfff4e8, 1.6);
   sun.position.set(3.2, 4.4, 8);
@@ -116,7 +122,24 @@ function createOpeningScene(THREE, mount, quality, cast) {
     const portrait = height > width && width < 1100;
     const cameraState = applyCamera(camera, progress, reduced, portrait);
     const phase = epilogue ? { ...cameraState.phase, ...epilogue } : cameraState.phase;
-    const prominent = applyObjects(cast.actors, cameraState.cruiseZ, progress, reduced, portrait, width / Math.max(1, height));
+    camera.getWorldDirection(viewForward);
+    viewRight.crossVectors(viewForward, camera.up);
+    if (viewRight.lengthSq() < 1e-8) viewRight.set(1, 0, 0);
+    viewRight.normalize();
+    viewUp.crossVectors(viewRight, viewForward).normalize();
+    viewBasis.x = camera.position.x;
+    viewBasis.y = camera.position.y;
+    viewBasis.z = camera.position.z;
+    viewBasis.fx = viewForward.x;
+    viewBasis.fy = viewForward.y;
+    viewBasis.fz = viewForward.z;
+    viewBasis.rx = viewRight.x;
+    viewBasis.ry = viewRight.y;
+    viewBasis.rz = viewRight.z;
+    viewBasis.ux = viewUp.x;
+    viewBasis.uy = viewUp.y;
+    viewBasis.uz = viewUp.z;
+    const prominent = applyObjects(cast.actors, cameraState.cruiseZ, progress, reduced, portrait, width / Math.max(1, height), viewBasis);
     life.seek(progress, camera);
     const lifeShown = life.shown();
     mount.dataset.cells = lifeShown.cells ? '1' : '0';
