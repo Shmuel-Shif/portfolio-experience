@@ -1,4 +1,5 @@
 import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } from './animation/timeline.js';
+import { createArrivalGalaxy } from './arrival-galaxy.js';
 import { mountOpeningScene } from './opening-scene.js';
 
 const ASSET_MANIFEST = [];
@@ -34,9 +35,20 @@ function createExperience(root) {
   const hint = root.querySelector('[data-scroll-hint]');
   const quality = detectQuality();
   const opening = createOpeningStage(root.querySelector('[data-stage-mount]'), quality);
+  let galaxy = null;
+  let galaxyWanted = false;
   const scroll = createScrollController(root, {
     openingLength: measureOpeningLength(),
     lambda: quality.lambda,
+    onFrame(now) {
+      if (!galaxyWanted || document.hidden) return false;
+      if (!galaxy) {
+        galaxy = createArrivalGalaxy(root.querySelector('[data-arrival-sky]'), quality);
+        galaxy.start();
+      }
+      if (!arrivalVisible(root)) return false;
+      return galaxy.tick(now);
+    },
   });
   let assets = new Map();
   const skipOpening = openingAlreadySeen();
@@ -87,23 +99,32 @@ function createExperience(root) {
     root.style.setProperty('--content-shift', shift.toFixed(2));
     const contentReveal = clamp01(shift / Math.max(1, span * 0.42));
     const logoReveal = film ? film.logo : (root.dataset.sealed === 'true' ? contentReveal : 0);
-    const headerReveal = film
-      ? film.header
-      : (root.dataset.sealed === 'true' ? clamp01((contentReveal - 0.45) / 0.4) : 0);
     const arrivalLogo = root.querySelector('[data-site-logo]');
-    const siteHeader = root.querySelector('[data-site-header]');
     if (arrivalLogo) {
       arrivalLogo.style.opacity = logoReveal.toFixed(3);
       arrivalLogo.style.transform = `translateY(${((1 - logoReveal) * 28).toFixed(1)}px) scale(${(0.96 + logoReveal * 0.04).toFixed(3)})`;
     }
+    const siteHeader = root.querySelector('[data-site-header]');
+    const headerReveal = root.dataset.sealed === 'true'
+      ? clamp01((scrollShift - landed) / Math.max(1, span * 0.42))
+      : 0;
     if (siteHeader) {
-      siteHeader.style.opacity = headerReveal.toFixed(3);
-      siteHeader.style.pointerEvents = headerReveal > 0.9 ? 'auto' : 'none';
-      const overPaper = root.dataset.sealed === 'true' && scrollShift > span - 72;
-      siteHeader.dataset.surface = overPaper ? 'paper' : 'ink';
+      siteHeader.style.setProperty('--header-reveal', headerReveal.toFixed(3));
+      const headerReady = headerReveal > 0.92;
+      siteHeader.dataset.ready = headerReady ? 'true' : 'false';
+      siteHeader.toggleAttribute('inert', !headerReady);
     }
     if (film && film.done) scroll.seal(landed);
-    if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) content.hidden = false;
+    if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) {
+      content.hidden = false;
+      if (!galaxyWanted) {
+        galaxyWanted = true;
+        scroll.wake();
+      }
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) scroll.wake();
   });
   if (!skipOpening) {
     mountOpeningScene(opening, stageMount, quality, {
@@ -135,6 +156,15 @@ function createExperience(root) {
       return assets;
     },
   };
+}
+
+function arrivalVisible(root) {
+  const content = root.querySelector('[data-content]');
+  if (!content || content.hidden) return false;
+  const span = root.clientHeight || window.innerHeight;
+  const shift = Number.parseFloat(root.style.getPropertyValue('--content-shift')) || 0;
+  const top = span - shift;
+  return top < span && top + span * 1.2 > 0;
 }
 
 function showFinishedSite(root, view, scroll) {
@@ -380,7 +410,8 @@ function createScrollController(root, options) {
     if (settledKey !== state.published) publish();
     const filming = (state.epilogue || state.illusion) && !state.sealed;
     const chasing = !state.sealed && Math.abs(state.aim - state.offset) > 0.08;
-    if (state.pending !== 0 || chasing || filming) state.frame = requestAnimationFrame(step);
+    const live = typeof options.onFrame === 'function' && options.onFrame(now);
+    if (state.pending !== 0 || chasing || filming || live) state.frame = requestAnimationFrame(step);
     else {
       state.frame = 0;
       state.lastTime = 0;
@@ -544,6 +575,9 @@ function createScrollController(root, options) {
       root.addEventListener('touchcancel', onTouchEnd, { passive: true });
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('resize', onResize);
+    },
+    wake() {
+      wake();
     },
   };
 }

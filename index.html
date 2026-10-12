@@ -32,15 +32,16 @@
       <!-- Future business content starts after the opening timeline. -->
       <div class="experience__content" data-content hidden>
         <section class="site-arrival" data-site-arrival>
-          <img src="assets/logo/logo-ful.png" alt="שמואל שיף" data-site-logo>
+          <div class="arrival-sky" data-arrival-sky aria-hidden="true"></div>
+          <span class="site-arrival__halo" aria-hidden="true"></span>
+          <img class="site-arrival__logo" src="assets/logo/logo-ful.png" alt="שמואל שיף" data-site-logo>
         </section>
         <div class="site-body" id="site-body" data-site-body></div>
       </div>
-      <header class="site-header" data-site-header data-surface="ink">
-        <div class="site-header__brand">
-          <img src="assets/logo/logo.png" alt="" data-site-header-logo>
-          <p class="site-header__name">שמואל שיף</p>
-        </div>
+      <header class="site-header" data-site-header>
+        <a class="site-header__brand" href="#site-body">
+          <img class="site-header__mark" src="assets/logo/logo.png" alt="שמואל שיף" width="52" height="52">
+        </a>
         <nav class="site-nav" aria-label="ניווט">
           <a href="#site-body">עבודות</a>
           <a href="#site-body">שירותים</a>
