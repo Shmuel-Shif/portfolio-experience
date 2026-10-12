@@ -5,6 +5,23 @@ const ASSET_MANIFEST = [];
 const OPENING_MIN = 1200;
 const OPENING_MAX = 2600;
 const SCENE_TO_CIRCLE = 2;
+const OPENING_SEEN_KEY = 'portfolio-opening-seen';
+
+function openingAlreadySeen() {
+  try {
+    return sessionStorage.getItem(OPENING_SEEN_KEY) === '1';
+  } catch (error) {
+    return false;
+  }
+}
+
+function markOpeningSeen() {
+  try {
+    sessionStorage.setItem(OPENING_SEEN_KEY, '1');
+  } catch (error) {
+    // The tab can still finish the visit when storage is blocked.
+  }
+}
 
 function boot() {
   const root = document.getElementById('experience');
@@ -22,6 +39,7 @@ function createExperience(root) {
     lambda: quality.lambda,
   });
   let assets = new Map();
+  const skipOpening = openingAlreadySeen();
 
   root.dataset.quality = quality.level;
   root.dataset.mode = 'opening';
@@ -42,14 +60,20 @@ function createExperience(root) {
     const film = sample.epilogue == null ? null : epilogueAt(sample.epilogue);
     opening.seek(sceneProgress, film, sample.illusion == null ? 0 : sample.illusion);
     root.style.setProperty('--opening-progress', circleProgress.toFixed(4));
-    const reveal = stageMount.dataset.scene === 'attached' ? clamp01(sceneProgress / 0.12) : 0;
+    const reveal = root.dataset.sealed === 'true'
+      ? 1
+      : (stageMount.dataset.scene === 'attached' ? clamp01(sceneProgress / 0.12) : 0);
     root.style.setProperty('--scene-reveal', reveal.toFixed(4));
     root.dataset.sceneProgress = sceneProgress.toFixed(4);
     if (circleProgress > 0.001) root.dataset.opening = 'active';
+    else delete root.dataset.opening;
     if (circleProgress >= 0.999) root.dataset.circle = 'full';
     else delete root.dataset.circle;
     if (!hint) return;
-    const hintVisible = root.dataset.phase === 'ready' && circleProgress < 0.92 && sample.mode === 'opening';
+    const hintVisible = root.dataset.phase === 'ready'
+      && root.dataset.sealed !== 'true'
+      && sample.mode === 'opening'
+      && circleProgress <= 0.001;
     hint.setAttribute('aria-hidden', hintVisible ? 'false' : 'true');
     const phase = film || phases(sceneProgress);
     if (!film && phase.line >= 0.9) scroll.beginEpilogue();
@@ -81,14 +105,20 @@ function createExperience(root) {
     if (film && film.done) scroll.seal(landed);
     if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) content.hidden = false;
   });
-  mountOpeningScene(opening, stageMount, quality, {
-    onProgress(ratio) {
-      view.render(ratio);
-    },
-  });
+  if (!skipOpening) {
+    mountOpeningScene(opening, stageMount, quality, {
+      onProgress(ratio) {
+        view.render(ratio);
+      },
+    });
+  }
 
   return {
     start() {
+      if (skipOpening) {
+        showFinishedSite(root, view, scroll);
+        return;
+      }
       waitForScene(stageMount)
         .then(() => view.render(1, true))
         .then(() => view.settle())
@@ -105,6 +135,19 @@ function createExperience(root) {
       return assets;
     },
   };
+}
+
+function showFinishedSite(root, view, scroll) {
+  view.finish();
+  const hint = root.querySelector('[data-scroll-hint]');
+  const finale = root.querySelector('[data-finale]');
+  if (hint) hint.setAttribute('aria-hidden', 'true');
+  if (finale) finale.setAttribute('aria-hidden', 'true');
+  root.style.setProperty('--opening-progress', '1');
+  root.style.setProperty('--scene-reveal', '1');
+  const span = root.clientHeight || window.innerHeight;
+  scroll.seal(span * 1.15);
+  scroll.enable();
 }
 
 function measureCircleLength() {
@@ -482,6 +525,7 @@ function createScrollController(root, options) {
       const landed = state.openingLength + state.landedShift;
       state.min = landed;
       root.dataset.sealed = 'true';
+      markOpeningSeen();
       const content = root.querySelector('[data-content]');
       if (content) content.hidden = false;
       state.offset = clampOffset(Math.max(state.offset, landed));

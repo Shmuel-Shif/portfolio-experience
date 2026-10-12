@@ -262,6 +262,9 @@ body {
 
 .experience[data-phase="ready"] .intro__dot {
   opacity: calc(1 - min(var(--scene-reveal, 0), 1));
+}
+
+.experience[data-phase="ready"][data-opening="active"] .intro__dot {
   animation: dot-float 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
@@ -329,52 +332,32 @@ body {
 }
 
 .scroll-hint {
-  display: none;
   position: absolute;
-  inset-inline: 0;
-  bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 22px));
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
   margin: 0;
-  padding-inline: 24px;
-  color: rgba(0, 0, 0, 0.72);
-  font-size: 13px;
-  line-height: 1.4;
+  color: #000000;
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  transform: translate(-50%, 18px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.8s ease, visibility 0.8s ease;
+  pointer-events: none;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
 }
 
-.experience[data-phase="ready"] .scroll-hint {
-  opacity: calc(1 - var(--opening-progress));
+.experience[data-phase="ready"]:not([data-opening="active"]):not([data-sealed="true"]) .scroll-hint {
+  opacity: 1;
   visibility: visible;
-  transition-delay: 0.45s;
-}
-
-.experience[data-opening="active"] .scroll-hint {
-  transition: none;
 }
 
 .experience[data-mode="content"] .scroll-hint {
   opacity: 0;
   visibility: hidden;
-}
-
-.scroll-hint__motion {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 16px;
-  animation: scroll-cue 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-.scroll-hint__cue {
-  width: 8px;
-  height: 8px;
-  border-right: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-  transform: translateY(-3px) rotate(45deg);
 }
 
 @keyframes dot-float {
@@ -388,22 +371,8 @@ body {
   }
 }
 
-@keyframes scroll-cue {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.3;
-  }
-
-  50% {
-    transform: translateY(6px);
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .intro__dot,
-  .scroll-hint__motion {
+  .intro__dot {
     animation: none;
   }
 
@@ -411,10 +380,6 @@ body {
   .scroll-hint,
   .site-header {
     transition: none;
-  }
-
-  .scroll-hint__motion {
-    opacity: 0.8;
   }
 }
 
