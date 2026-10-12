@@ -20,9 +20,6 @@ export function createArrivalGalaxy(mount, quality) {
   let height = 0;
   let starting = false;
   let shown = false;
-  let reveal = 0;
-  let fadeId = 0;
-  let fadeStamp = 0;
 
   function start() {
     if (starting || renderer || failed || !mount) return;
@@ -36,60 +33,33 @@ export function createArrivalGalaxy(mount, quality) {
     });
   }
 
-  let fadeListener = null;
-
-  function play(onFade) {
-    if (typeof onFade === 'function') fadeListener = onFade;
+  function play() {
     shown = true;
     if (!ready) return;
     setShown(true);
-    if (reduced) reveal = 1;
     paint();
-    if (reduced || reveal >= 1 || fadeId) return;
-    fadeStamp = 0;
-    fadeId = requestAnimationFrame(fadeStep);
   }
 
   function pause() {
     shown = false;
-    if (fadeId) cancelAnimationFrame(fadeId);
-    fadeId = 0;
-    fadeStamp = 0;
     setShown(false);
-  }
-
-  function fadeStep(now) {
-    fadeId = 0;
-    if (!shown || !ready || reduced) return;
-    if (fadeStamp === 0) fadeStamp = now;
-    const dt = Math.min(0.05, Math.max(0, (now - fadeStamp) / 1000));
-    fadeStamp = now;
-    reveal = Math.min(1, reveal + dt / 2.1);
-    paint();
-    if (shown && reveal < 1) fadeId = requestAnimationFrame(fadeStep);
   }
 
   function paint() {
     if (!ready || !fieldMaterial) return;
-    fieldMaterial.uniforms.uReveal.value = reveal;
+    fieldMaterial.uniforms.uReveal.value = 1;
     renderer.render(scene, camera);
-    if (fadeListener) fadeListener(reveal);
   }
 
   function setShown(visible) {
     if (!renderer) return;
-    const host = mount.closest('.experience');
     renderer.domElement.style.visibility = visible ? 'visible' : 'hidden';
-    if (!host) return;
-    if (visible) host.dataset.galaxy = 'live';
-    else delete host.dataset.galaxy;
   }
 
   function resize() {
     if (!ready || !renderer) return;
-    const host = mount.closest('.experience') || mount;
-    const nextWidth = host.clientWidth || window.innerWidth;
-    const nextHeight = host.clientHeight || window.innerHeight;
+    const nextWidth = mount.clientWidth || window.innerWidth;
+    const nextHeight = mount.clientHeight || window.innerHeight;
     if (Math.abs(nextWidth - width) < 2 && Math.abs(nextHeight - height) < 2) return;
     width = nextWidth;
     height = nextHeight;
@@ -116,8 +86,7 @@ export function createArrivalGalaxy(mount, quality) {
     renderer.domElement.className = 'arrival-sky__canvas';
     renderer.domElement.setAttribute('aria-hidden', 'true');
     renderer.domElement.style.visibility = 'hidden';
-    const host = mount.closest('.experience') || mount;
-    host.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);

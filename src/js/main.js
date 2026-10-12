@@ -36,7 +36,6 @@ function createExperience(root) {
   const quality = detectQuality();
   const opening = createOpeningStage(root.querySelector('[data-stage-mount]'), quality);
   let galaxy = null;
-  let arrivalFade = 0;
   const scroll = createScrollController(root, {
     openingLength: measureOpeningLength(),
     lambda: quality.lambda,
@@ -88,16 +87,14 @@ function createExperience(root) {
       ? scrollShift
       : (film ? film.site * landed : 0);
     root.style.setProperty('--content-shift', shift.toFixed(2));
-    const logoReveal = film && root.dataset.sealed !== 'true'
-      ? film.logo
-      : (root.dataset.sealed === 'true' ? arrivalFade : 0);
+    const logoReveal = film && root.dataset.sealed !== 'true' ? film.logo : (root.dataset.sealed === 'true' ? 1 : 0);
     const arrivalLogo = root.querySelector('[data-site-logo]');
     const arrivalHalo = root.querySelector('.site-arrival__halo');
     if (arrivalLogo) {
       arrivalLogo.style.opacity = logoReveal.toFixed(3);
       arrivalLogo.style.transform = 'none';
     }
-    if (arrivalHalo) arrivalHalo.style.opacity = root.dataset.sealed === 'true' ? logoReveal.toFixed(3) : '1';
+    if (arrivalHalo) arrivalHalo.style.opacity = '1';
     const siteHeader = root.querySelector('[data-site-header]');
     const headerReveal = root.dataset.sealed === 'true'
       ? clamp01((scrollShift - landed) / Math.max(1, span * 0.42))
@@ -116,16 +113,7 @@ function createExperience(root) {
         galaxy = createArrivalGalaxy(root.querySelector('[data-arrival-sky]'), quality);
         galaxy.start();
       }
-      galaxy.play((amount) => {
-        arrivalFade = amount;
-        const logo = root.querySelector('[data-site-logo]');
-        const halo = root.querySelector('.site-arrival__halo');
-        if (logo) {
-          logo.style.opacity = amount.toFixed(3);
-          logo.style.transform = 'none';
-        }
-        if (halo) halo.style.opacity = amount.toFixed(3);
-      });
+      galaxy.play();
     } else if (galaxy) {
       galaxy.pause();
     }
