@@ -124,6 +124,34 @@ function createOpeningScene(THREE, mount, quality, cast) {
     const covered = phase.white > 0.92;
     renderer.domElement.style.visibility = covered ? 'hidden' : 'visible';
     mount.dataset.prominent = String(prominent);
+    mount.__measure = (idPart) => {
+      const actor = cast.actors.find((item) => String(item.id).includes(idPart));
+      if (!actor || !actor.object.visible) return null;
+      const width = mount.clientWidth || window.innerWidth;
+      const height = mount.clientHeight || window.innerHeight;
+      const corners = [
+        [-0.825, -0.825, 0],
+        [0.825, -0.825, 0],
+        [0.825, 0.825, 0],
+        [-0.825, 0.825, 0],
+      ];
+      const projected = corners.map(([x, y, z]) => {
+        const point = new THREE.Vector3(x, y, z);
+        actor.object.localToWorld(point);
+        point.project(camera);
+        return { x: (point.x * 0.5 + 0.5) * width, y: (-point.y * 0.5 + 0.5) * height, z: point.z };
+      });
+      const xs = projected.map((point) => point.x);
+      const ys = projected.map((point) => point.y);
+      return {
+        id: actor.id,
+        w: Math.round(Math.max(...xs) - Math.min(...xs)),
+        h: Math.round(Math.max(...ys) - Math.min(...ys)),
+        x: Math.round((Math.min(...xs) + Math.max(...xs)) / 2),
+        y: Math.round((Math.min(...ys) + Math.max(...ys)) / 2),
+        behind: projected.some((point) => point.z < -1 || point.z > 1),
+      };
+    };
     if (!covered) renderer.render(scene, camera);
   }
 

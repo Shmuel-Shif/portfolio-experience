@@ -64,21 +64,21 @@ export function applyObjects(actors, cameraZ, progress, reduced) {
       return;
     }
     const ahead = cameraZ - actor.home.z;
-    const span = actor.near ? 12 : 20;
-    const pass = clamp01((span + 2 - ahead) / span);
+    const span = actor.near ? 46 : 62;
+    const pass = clamp01((span + 8 - ahead) / span);
     const side = actor.exit || 1;
     const reach = actor.near ? 7.6 : 9.4;
     let x = side * (reach - pass * reach * 2) * motion;
     let y = actor.home.y * Math.sin(pass * Math.PI) + actor.entry.y * (1 - pass);
-    let z = actor.home.z - (1 - pass) * 16 + pass * 1.2;
+    let z = actor.home.z - (1 - pass) * 6 + pass * 3;
     const pull = smoothstep(clamp01((phase.suction - actor.delay) / Math.max(0.12, 1 - actor.delay)));
     const angle = actor.swirl + pull * pull * actor.turns * Math.PI * 2.6;
     const radius = actor.orbit * (1 - pull);
     x = x * (1 - pull) + Math.cos(angle) * radius;
     y = y * (1 - pull) + Math.sin(angle * 0.85) * radius * 0.62;
     z = z * (1 - pull) + (coreZ - pull * actor.sink) * pull;
-    const approach = 0.32 + pass * 0.5;
-    const close = actor.near ? smoothstep(clamp01((pass - 0.74) / 0.18)) * 0.46 : 0;
+    const approach = 0.38 + pass * 0.42;
+    const close = actor.near ? smoothstep(clamp01((pass - 0.55) / 0.35)) * 0.22 : 0;
     const scale = Math.min(1.27, actor.baseScale * (approach + close) * (1 - pull * 0.99));
     const imagesOpen = smoothstep(clamp01((phase.t - 0.1) / 0.04));
     const swallow = smoothstep(clamp01((pull - 0.82) / 0.16));

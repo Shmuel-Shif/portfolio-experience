@@ -266,12 +266,12 @@ function createScrollController(root, options) {
 
   function openingNotch() {
     const length = state.openingLength;
-    if (inScene()) return Math.max(7, Math.min(11, length * 0.0022));
+    if (inScene()) return Math.max(2.4, Math.min(4, length * 0.00072));
     return Math.max(16, Math.min(24, length * 0.0055));
   }
 
   function openingLead() {
-    return openingNotch() * (inScene() ? 8 : 4);
+    return openingNotch() * (inScene() ? 3 : 4);
   }
 
   function openingRate() {
