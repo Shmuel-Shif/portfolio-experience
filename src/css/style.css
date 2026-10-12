@@ -134,15 +134,21 @@ body {
 .arrival-sky {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: #000000;
   pointer-events: none;
 }
 
-.arrival-sky canvas {
+.arrival-sky__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   display: block;
   width: 100%;
   height: 100%;
   border: 0;
+  pointer-events: none;
+  transform: translateZ(0);
 }
 
 .site-arrival__halo {
@@ -151,7 +157,8 @@ body {
   width: min(820px, 78vw);
   height: min(420px, 42vw);
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(126, 231, 255, 0.16), rgba(126, 231, 255, 0) 68%);
+  background: radial-gradient(ellipse at center, rgba(110, 190, 220, 0.1), rgba(110, 190, 220, 0) 68%);
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -199,7 +206,7 @@ body {
 }
 
 .site-header__mark {
-  width: 52px;
+  width: 131px;
   height: 52px;
   object-fit: cover;
   flex: none;
@@ -233,7 +240,7 @@ body {
   }
 
   .site-header__mark {
-    width: 44px;
+    width: 108px;
     height: 44px;
   }
 

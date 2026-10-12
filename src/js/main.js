@@ -36,19 +36,10 @@ function createExperience(root) {
   const quality = detectQuality();
   const opening = createOpeningStage(root.querySelector('[data-stage-mount]'), quality);
   let galaxy = null;
-  let galaxyWanted = false;
+  let arrivalFade = 0;
   const scroll = createScrollController(root, {
     openingLength: measureOpeningLength(),
     lambda: quality.lambda,
-    onFrame(now) {
-      if (!galaxyWanted || document.hidden) return false;
-      if (!galaxy) {
-        galaxy = createArrivalGalaxy(root.querySelector('[data-arrival-sky]'), quality);
-        galaxy.start();
-      }
-      if (!arrivalVisible(root)) return false;
-      return galaxy.tick(now);
-    },
   });
   let assets = new Map();
   const skipOpening = openingAlreadySeen();
@@ -97,13 +88,17 @@ function createExperience(root) {
       ? scrollShift
       : (film ? film.site * landed : 0);
     root.style.setProperty('--content-shift', shift.toFixed(2));
-    const contentReveal = clamp01(shift / Math.max(1, span * 0.42));
-    const logoReveal = film ? film.logo : (root.dataset.sealed === 'true' ? contentReveal : 0);
+    const logoReveal = film && root.dataset.sealed !== 'true'
+      ? film.logo
+      : (root.dataset.sealed === 'true' ? arrivalFade : 0);
     const arrivalLogo = root.querySelector('[data-site-logo]');
+    const arrivalHalo = root.querySelector('.site-arrival__halo');
     if (arrivalLogo) {
       arrivalLogo.style.opacity = logoReveal.toFixed(3);
-      arrivalLogo.style.transform = `translateY(${((1 - logoReveal) * 28).toFixed(1)}px) scale(${(0.96 + logoReveal * 0.04).toFixed(3)})`;
+      if (root.dataset.sealed === 'true') arrivalLogo.style.transform = 'none';
+      else arrivalLogo.style.transform = `translateY(${((1 - logoReveal) * 28).toFixed(1)}px) scale(${(0.96 + logoReveal * 0.04).toFixed(3)})`;
     }
+    if (arrivalHalo) arrivalHalo.style.opacity = root.dataset.sealed === 'true' ? logoReveal.toFixed(3) : '1';
     const siteHeader = root.querySelector('[data-site-header]');
     const headerReveal = root.dataset.sealed === 'true'
       ? clamp01((scrollShift - landed) / Math.max(1, span * 0.42))
@@ -115,12 +110,25 @@ function createExperience(root) {
       siteHeader.toggleAttribute('inert', !headerReady);
     }
     if (film && film.done) scroll.seal(landed);
-    if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) {
-      content.hidden = false;
-      if (!galaxyWanted) {
-        galaxyWanted = true;
-        scroll.wake();
+    if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) content.hidden = false;
+    const arrivalOnScreen = root.dataset.sealed === 'true' && shift > span * 0.35 && shift < span * 2.15;
+    if (arrivalOnScreen) {
+      if (!galaxy) {
+        galaxy = createArrivalGalaxy(root.querySelector('[data-arrival-sky]'), quality);
+        galaxy.start();
       }
+      galaxy.play((amount) => {
+        arrivalFade = amount;
+        const logo = root.querySelector('[data-site-logo]');
+        const halo = root.querySelector('.site-arrival__halo');
+        if (logo) {
+          logo.style.opacity = amount.toFixed(3);
+          logo.style.transform = 'none';
+        }
+        if (halo) halo.style.opacity = amount.toFixed(3);
+      });
+    } else if (galaxy) {
+      galaxy.pause();
     }
   });
   document.addEventListener('visibilitychange', () => {
@@ -156,15 +164,6 @@ function createExperience(root) {
       return assets;
     },
   };
-}
-
-function arrivalVisible(root) {
-  const content = root.querySelector('[data-content]');
-  if (!content || content.hidden) return false;
-  const span = root.clientHeight || window.innerHeight;
-  const shift = Number.parseFloat(root.style.getPropertyValue('--content-shift')) || 0;
-  const top = span - shift;
-  return top < span && top + span * 1.2 > 0;
 }
 
 function showFinishedSite(root, view, scroll) {
