@@ -52,7 +52,7 @@ function separateFood(actors) {
   });
 }
 
-export function applyObjects(actors, cameraZ, progress, reduced) {
+export function applyObjects(actors, cameraZ, progress, reduced, narrow) {
   const phase = phases(progress);
   const motion = reduced ? 0.28 : 1;
   const coreZ = -PATH_SPAN - 2;
@@ -67,9 +67,9 @@ export function applyObjects(actors, cameraZ, progress, reduced) {
     const span = actor.near ? 46 : 62;
     const pass = clamp01((span + 8 - ahead) / span);
     const side = actor.exit || 1;
-    const reach = actor.near ? 7.6 : 9.4;
+    const reach = (actor.near ? 7.6 : 9.4) * (narrow ? 0.46 : 1);
     let x = side * (reach - pass * reach * 2) * motion;
-    let y = actor.home.y * Math.sin(pass * Math.PI) + actor.entry.y * (1 - pass);
+    let y = (actor.home.y * Math.sin(pass * Math.PI) + actor.entry.y * (1 - pass)) * (narrow ? 0.78 : 1);
     let z = actor.home.z - (1 - pass) * 6 + pass * 3;
     const pull = smoothstep(clamp01((phase.suction - actor.delay) / Math.max(0.12, 1 - actor.delay)));
     const angle = actor.swirl + pull * pull * actor.turns * Math.PI * 2.6;
@@ -79,9 +79,9 @@ export function applyObjects(actors, cameraZ, progress, reduced) {
     z = z * (1 - pull) + (coreZ - pull * actor.sink) * pull;
     const approach = 0.38 + pass * 0.42;
     const close = actor.near ? smoothstep(clamp01((pass - 0.55) / 0.35)) * 0.22 : 0;
-    const scale = Math.min(1.27, actor.baseScale * (approach + close) * (1 - pull * 0.99));
+    const scale = Math.min(narrow ? 1.9 : 1.27, actor.baseScale * (approach + close) * (narrow ? 1.48 : 1) * (1 - pull * 0.99));
     const imagesOpen = smoothstep(clamp01((phase.t - 0.1) / 0.04));
-    const swallow = smoothstep(clamp01((pull - 0.82) / 0.16));
+    const swallow = smoothstep(clamp01((pull - 0.92) / 0.08));
     const flying = imagesOpen > 0.02 && pull < 0.04 && pass > 0.02 && pass < 0.995 && phase.spiral < 0.35;
     const sucking = pull >= 0.04 && swallow < 0.98 && phase.shrink < 0.01 && phase.white < 0.01 && scale > 0.012;
     const show = (flying || sucking) && phase.white < 0.01 && phase.shrink < 0.01;

@@ -66,7 +66,7 @@ export function createSpiral(THREE) {
       mesh.translateZ(-distance);
       mesh.scale.set(width * 0.5, height * 0.5, 1);
       material.uniforms.uAspect.value = aspect;
-      material.uniforms.uGrow.value = grow;
+      material.uniforms.uGrow.value = grow * ((camera.aspect || 1) < 0.85 ? 1.2 : 1);
       material.uniforms.uColor.value = phase.color || 0;
       material.uniforms.uSpin.value = phase.spiralIn * 4 + Math.max(0, phase.t - 0.34) * 22;
     },

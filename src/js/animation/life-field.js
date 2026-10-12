@@ -161,8 +161,9 @@ export function createLifeField(THREE, level) {
     const imagesLead = phase.t > 0.1;
 
     cells.visible = cellsIn > 0.02 && phase.t < 0.43;
-    const dustFade = dustIn * (1 - smoothstep(clamp01((pull - 0.12) / 0.5)));
-    dust.visible = dustFade > 0.03 && phase.spiralIn < 0.02;
+    const portrait = camera && camera.aspect < 0.85;
+    const dustFade = dustIn * (1 - smoothstep(clamp01((pull - 0.2) / 0.62)));
+    dust.visible = dustFade > 0.03 && phase.spiralIn < 0.4;
     dust.material.opacity = 0.7 * dustFade;
 
     if (cells.visible) {
@@ -171,7 +172,7 @@ export function createLifeField(THREE, level) {
       const ahead = cameraZ - cell.z;
       const pass = clamp01((24 - ahead) / 26);
       const side = Math.sign(cell.x || (index % 2 === 0 ? 1 : -1));
-      const reach = cell.scale > 1.4 ? 5.4 : 8.4;
+      const reach = (cell.scale > 1.4 ? 5.4 : 8.4) * (portrait ? 0.42 : 1);
       const angle = cell.phase + pull * (2.5 + index * 0.01);
       let x = side * (reach - pass * reach * 2);
       let y = cell.y * Math.sin(pass * Math.PI);
@@ -198,8 +199,8 @@ export function createLifeField(THREE, level) {
     }
 
     fibers.forEach((fiber, fiberIndex) => {
-      const fiberFade = imagesLead ? 1 - smoothstep(clamp01((pull - 0.2) / 0.55)) : 0;
-      const fiberIn = fiberFade > 0.04 && phase.spiralIn < 0.02;
+      const fiberFade = imagesLead ? 1 - smoothstep(clamp01((pull - 0.28) / 0.62)) : 0;
+      const fiberIn = fiberFade > 0.04 && phase.spiralIn < 0.4;
       fiber.line.visible = fiberIn;
       fiber.line.material.opacity = 0.45 * fiberFade;
       if (!fiberIn) return;
@@ -239,19 +240,22 @@ export function createLifeField(THREE, level) {
     }
     membranes.forEach((membrane, index) => {
       const z = wrapZ(membrane.z + phase.flight * PATH_SPAN * membrane.parallax);
+      const camZ = camera ? camera.position.z : 0;
+      const dist = Math.abs(camZ - z);
       const local = clamp01((pull - index * 0.05) / 0.85);
+      const showMembrane = !portrait && dist > 14 && cellsIn > 0.35 && phase.spiralIn < 0.02;
+      membrane.mesh.visible = showMembrane;
+      if (!showMembrane) return;
       const angle = index + pull * 3;
       membrane.mesh.position.set(
         membrane.x * (1 - local) + Math.cos(angle) * (1 - local),
         membrane.y * (1 - local),
         z * (1 - local) + coreZ * local
       );
-      const showMembrane = cellsIn > 0.35 && phase.spiralIn < 0.02;
       const membraneFade = 1 - smoothstep(clamp01((pull - 0.15) / 0.5));
-      membrane.mesh.visible = showMembrane && membraneFade > 0.04;
-      const size = membrane.scale * (1 - local * 0.9) * cellsIn;
+      const size = Math.min(1.15, membrane.scale * (1 - local * 0.9) * cellsIn);
       membrane.mesh.scale.set(size, size * 0.62, size * 0.8);
-      membrane.mesh.material.opacity = membrane.mesh.visible ? 0.08 * (1 - local) * membraneFade : 0;
+      membrane.mesh.material.opacity = 0.08 * (1 - local) * membraneFade;
     });
   }
 
