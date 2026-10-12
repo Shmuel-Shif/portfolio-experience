@@ -1,4 +1,4 @@
-import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, illusionSpinExtra, phases } from './animation/timeline.js';
+import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } from './animation/timeline.js';
 import { mountOpeningScene } from './opening-scene.js';
 
 const ASSET_MANIFEST = [];
@@ -43,7 +43,7 @@ function createExperience(root) {
         : ILLUSION_DONE;
     }
     const film = sample.epilogue == null ? null : epilogueAt(sample.epilogue);
-    opening.seek(sceneProgress, film, sample.illusion == null ? 0 : illusionSpinExtra(sample.illusion));
+    opening.seek(sceneProgress, film, sample.illusion == null ? 0 : sample.illusion);
     root.style.setProperty('--opening-progress', circleProgress.toFixed(4));
     const reveal = stageMount.dataset.scene === 'attached' ? clamp01(sceneProgress / 0.12) : 0;
     root.style.setProperty('--scene-reveal', reveal.toFixed(4));
@@ -78,6 +78,8 @@ function createExperience(root) {
     if (siteHeader) {
       siteHeader.style.opacity = headerReveal.toFixed(3);
       siteHeader.style.pointerEvents = headerReveal > 0.9 ? 'auto' : 'none';
+      const overPaper = root.dataset.sealed === 'true' && scrollShift > span - 72;
+      siteHeader.dataset.surface = overPaper ? 'paper' : 'ink';
     }
     if (film && film.done) scroll.seal(landed);
     if (content && (root.dataset.sealed === 'true' || (film && film.night > 0.35))) content.hidden = false;

@@ -80,9 +80,9 @@ export function createSpiral(THREE) {
       material.uniforms.uGrow.value = grow * (aspect < 0.85 ? 1.2 : 1);
       material.uniforms.uColor.value = phase.color || 0;
       material.uniforms.uGlow.value = phase.glow || 0;
-      const held = Math.min(phase.t || 0, 0.86);
-      const baseSpin = (phase.spiralIn || 0) * 4 + Math.max(0, held - 0.34) * 22;
-      material.uniforms.uSpin.value = baseSpin + 4.721951 * Math.max(0, spinExtra || 0);
+      const heldSpin = (phase.spiralIn || 0) * 4;
+      const spinElapsed = Math.max(0, Number(spinExtra) || 0);
+      material.uniforms.uSpin.value = heldSpin + (22 * 0.44) / 2.05 * spinElapsed;
     },
   };
 }

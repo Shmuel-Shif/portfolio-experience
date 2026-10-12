@@ -59,11 +59,6 @@ const ILLUSION_HOLD = 2.05;
 const ILLUSION_EXTEND = 2.2;
 const ILLUSION_FINISH = 1.15 * SUCTION_SLOW;
 
-export function illusionSpinExtra(elapsed) {
-  const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
-  return Math.max(0, time - (ILLUSION_SUCK + ILLUSION_HOLD));
-}
-
 export function illusionProgress(elapsed, origin = ILLUSION_GATE) {
   const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
   const start = Math.min(0.84, Math.max(ILLUSION_GATE, origin));
