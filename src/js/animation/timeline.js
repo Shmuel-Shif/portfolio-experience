@@ -18,8 +18,8 @@ export function phases(progress) {
   const spiralIn = smoothstep(clamp01((t - 0.34) / 0.07));
   const color = smoothstep(clamp01((t - 0.44) / 0.38));
   const shrink = smoothstep(clamp01((t - 0.88) / 0.018));
-  const flash = smoothstep(clamp01((t - 0.902) / 0.008));
-  const white = Math.max(flash, smoothstep(clamp01((t - 0.912) / 0.006)));
+  const glow = smoothstep(clamp01((t - 0.864) / 0.056));
+  const white = smoothstep(clamp01((t - 0.922) / 0.008));
   const line = smoothstep(clamp01((t - 0.92) / 0.012));
   const lineOut = smoothstep(clamp01((t - 0.948) / 0.008));
   const lineIn = smoothstep(clamp01((t - 0.956) / 0.01));
@@ -36,7 +36,8 @@ export function phases(progress) {
     color,
     shrink,
     spiral: spiralIn * (1 - shrink),
-    flash,
+    glow,
+    flash: 0,
     white,
     line,
     lineOut,
@@ -52,15 +53,28 @@ export function phases(progress) {
 
 export const ILLUSION_GATE = 0.34;
 export const ILLUSION_DONE = 0.933;
+const SUCTION_SLOW = 1.45;
+const ILLUSION_SUCK = 2.6 * SUCTION_SLOW;
+const ILLUSION_HOLD = 2.05;
+const ILLUSION_EXTEND = 2.2;
+const ILLUSION_FINISH = 1.15 * SUCTION_SLOW;
+
+export function illusionSpinExtra(elapsed) {
+  const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+  return Math.max(0, time - (ILLUSION_SUCK + ILLUSION_HOLD));
+}
 
 export function illusionProgress(elapsed, origin = ILLUSION_GATE) {
   const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
   const start = Math.min(0.84, Math.max(ILLUSION_GATE, origin));
   const suckEnd = 0.42;
   const holdEnd = 0.86;
-  const suck = 2.6;
-  const hold = 2.05;
-  const finish = 1.15;
+  const suck = ILLUSION_SUCK;
+  const hold = ILLUSION_HOLD;
+  const extend = ILLUSION_EXTEND;
+  const finish = ILLUSION_FINISH;
+  const afterHold = suck + hold;
+  const afterExtend = afterHold + extend;
   if (start >= holdEnd) {
     return start + (ILLUSION_DONE - start) * smoothstep(Math.min(1, time / finish));
   }
@@ -68,11 +82,12 @@ export function illusionProgress(elapsed, origin = ILLUSION_GATE) {
     const from = Math.min(start, suckEnd);
     return from + (suckEnd - from) * smoothstep(time / suck);
   }
-  if (time < suck + hold) {
+  if (time < afterHold) {
     const u = (time - suck) / hold;
     return suckEnd + (holdEnd - suckEnd) * u;
   }
-  const u = smoothstep(Math.min(1, (time - suck - hold) / finish));
+  if (time < afterExtend) return holdEnd;
+  const u = smoothstep(Math.min(1, (time - afterExtend) / finish));
   return holdEnd + (ILLUSION_DONE - holdEnd) * u;
 }
 

@@ -108,7 +108,7 @@ function createOpeningScene(THREE, mount, quality, cast) {
     renderer.render(scene, camera);
   }
 
-  function seek(nextProgress, epilogue) {
+  function seek(nextProgress, epilogue, spinExtra = 0) {
     if (disposed) return;
     const progress = clamp01(nextProgress);
     const width = mount.clientWidth || window.innerWidth;
@@ -121,7 +121,7 @@ function createOpeningScene(THREE, mount, quality, cast) {
     const lifeShown = life.shown();
     mount.dataset.cells = lifeShown.cells ? '1' : '0';
     mount.dataset.dust = lifeShown.dust ? '1' : '0';
-    spiral.seek(phase, camera);
+    spiral.seek(phase, camera, spinExtra);
     applyBackground(backdrop, progress);
     paintFinale(phase, line, nextLine, brand, flash, finale);
     const covered = phase.white > 0.92;
@@ -170,7 +170,8 @@ function createOpeningScene(THREE, mount, quality, cast) {
 function paintFinale(phase, line, nextLine, brand, flash, finale) {
   const first = phase.line * (1 - phase.lineOut);
   const second = phase.lineOut >= 0.98 ? phase.lineIn * (1 - phase.lineExit) : 0;
-  if (flash) flash.style.opacity = (phase.white * (1 - phase.night)).toFixed(3);
+  const veil = phase.glow > 0.001 ? 0 : phase.white * (1 - phase.night);
+  if (flash) flash.style.opacity = veil.toFixed(3);
   if (line) {
     line.style.opacity = first.toFixed(3);
     line.style.transform = `translate(-50%, calc(-50% + ${(-16 * phase.lineOut).toFixed(1)}px)) scale(${(1 - phase.lineOut * 0.035).toFixed(3)})`;

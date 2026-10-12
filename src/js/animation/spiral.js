@@ -11,6 +11,7 @@ export function createSpiral(THREE) {
       uGrow: { value: 0 },
       uAspect: { value: 1 },
       uColor: { value: 0 },
+      uGlow: { value: 0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -26,6 +27,7 @@ export function createSpiral(THREE) {
       uniform float uGrow;
       uniform float uAspect;
       uniform float uColor;
+      uniform float uGlow;
       void main() {
         vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
         float r = length(p);
@@ -41,6 +43,15 @@ export function createSpiral(THREE) {
         vec3 dark = mix(vec3(0.0), vec3(0.04, 0.12, 0.62), uColor);
         vec3 color = mix(light, dark, max(ink, step(0.94, fine)));
         color = mix(color, vec3(0.95, 0.62, 0.16), uColor * step(0.97, fine));
+        float glowAmt = clamp(uGlow, 0.0, 1.0);
+        float distN = r / max(cover, 0.0008);
+        float reach = mix(0.08, 1.75, glowAmt);
+        float spread = exp(-distN * distN / (reach * reach + 0.0001));
+        float illumination = spread * glowAmt;
+        float fill = smoothstep(0.86, 1.0, glowAmt);
+        illumination = clamp(illumination + fill * (1.0 - smoothstep(0.02, 1.25, distN)), 0.0, 1.0);
+        vec3 bloom = mix(vec3(0.58, 0.66, 0.82), vec3(0.96, 0.97, 0.98), illumination);
+        color = mix(color, max(color, bloom), illumination);
         gl_FragColor = vec4(color, mask);
       }
     `,
@@ -54,9 +65,9 @@ export function createSpiral(THREE) {
     mesh,
     geometry,
     material,
-    seek(phase, camera) {
-      const grow = phase.spiral * (1 - phase.flash);
-      mesh.visible = grow > 0.012 && phase.white < 0.35;
+    seek(phase, camera, spinExtra = 0) {
+      const grow = phase.spiralIn || 0;
+      mesh.visible = grow > 0.012 && (phase.white || 0) < 0.97;
       if (!mesh.visible) return;
       const aspect = camera.aspect || 1;
       const height = 2 * Math.tan((camera.fov * Math.PI) / 360) * distance;
@@ -66,9 +77,12 @@ export function createSpiral(THREE) {
       mesh.translateZ(-distance);
       mesh.scale.set(width * 0.5, height * 0.5, 1);
       material.uniforms.uAspect.value = aspect;
-      material.uniforms.uGrow.value = grow * ((camera.aspect || 1) < 0.85 ? 1.2 : 1);
+      material.uniforms.uGrow.value = grow * (aspect < 0.85 ? 1.2 : 1);
       material.uniforms.uColor.value = phase.color || 0;
-      material.uniforms.uSpin.value = phase.spiralIn * 4 + Math.max(0, phase.t - 0.34) * 22;
+      material.uniforms.uGlow.value = phase.glow || 0;
+      const held = Math.min(phase.t || 0, 0.86);
+      const baseSpin = (phase.spiralIn || 0) * 4 + Math.max(0, held - 0.34) * 22;
+      material.uniforms.uSpin.value = baseSpin + 4.721951 * Math.max(0, spinExtra || 0);
     },
   };
 }

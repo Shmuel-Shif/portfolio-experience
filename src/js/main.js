@@ -1,4 +1,4 @@
-import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } from './animation/timeline.js';
+import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, illusionSpinExtra, phases } from './animation/timeline.js';
 import { mountOpeningScene } from './opening-scene.js';
 
 const ASSET_MANIFEST = [];
@@ -43,7 +43,7 @@ function createExperience(root) {
         : ILLUSION_DONE;
     }
     const film = sample.epilogue == null ? null : epilogueAt(sample.epilogue);
-    opening.seek(sceneProgress, film);
+    opening.seek(sceneProgress, film, sample.illusion == null ? 0 : illusionSpinExtra(sample.illusion));
     root.style.setProperty('--opening-progress', circleProgress.toFixed(4));
     const reveal = stageMount.dataset.scene === 'attached' ? clamp01(sceneProgress / 0.12) : 0;
     root.style.setProperty('--scene-reveal', reveal.toFixed(4));
@@ -140,11 +140,12 @@ function createOpeningStage(mount, quality) {
   mount.dataset.quality = quality.level;
   mount.dataset.progress = '0';
 
-  function seek(progress, epilogue) {
+  function seek(progress, epilogue, spinExtra = 0) {
     const next = clamp01(progress);
     state.progress = next;
+    state.spinExtra = Math.max(0, Number(spinExtra) || 0);
     mount.dataset.progress = next.toFixed(4);
-    if (state.scene) state.scene.seek(next, epilogue);
+    if (state.scene) state.scene.seek(next, epilogue, state.spinExtra);
   }
 
   return {
@@ -157,7 +158,7 @@ function createOpeningStage(mount, quality) {
       }
       state.scene = scene;
       mount.dataset.scene = 'attached';
-      scene.seek(state.progress);
+      scene.seek(state.progress, null, state.spinExtra || 0);
     },
   };
 }
