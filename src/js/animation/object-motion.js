@@ -10,6 +10,36 @@ export function assignHomes(actors, rng) {
     placeActor(actor, pathIndex, actors.length, random);
   });
   separateFood(actors, random);
+  assignSuctionOrder(actors);
+}
+
+function flightEndDistance(actor) {
+  const cruiseZ = 8 - PATH_SPAN;
+  const centerZ = cruiseZ - 11;
+  const ahead = cruiseZ - actor.home.z;
+  const along = clamp01((42 - ahead) / 42);
+  const curve = along * along * (3 - 2 * along);
+  const bow = Math.sin(along * Math.PI);
+  const side = actor.exit || 1;
+  const lane = Math.max(2.25, actor.lane || 2.4);
+  const entryX = side * (actor.entry.x || 0.5);
+  const flightX = entryX + (side * lane - entryX) * curve + bow * side * 0.22;
+  const flightY = (actor.entry.y || 0) + ((actor.home.y || 0) - (actor.entry.y || 0)) * curve;
+  const flightZ = actor.home.z + along * 1.4;
+  return Math.hypot(flightX, flightY, flightZ - centerZ);
+}
+
+function assignSuctionOrder(actors) {
+  const order = actors.map((actor, index) => ({
+    actor,
+    index,
+    dist: flightEndDistance(actor),
+  }));
+  order.sort((a, b) => a.dist - b.dist || a.index - b.index);
+  const last = Math.max(1, order.length - 1);
+  order.forEach((item, rank) => {
+    item.actor.delay = (rank / last) * 0.84;
+  });
 }
 
 function placeActor(actor, pathIndex, count, random) {
@@ -34,13 +64,14 @@ function placeActor(actor, pathIndex, count, random) {
   actor.baseScale = actor.near ? 1.02 : 0.84;
   if (actor.kind === 'card') actor.baseScale = actor.variant === 'code' || actor.variant === 'plate' ? 0.9 : 1.02;
   if (actor.kind === 'word') actor.baseScale = actor.variant === 'float' ? 0.62 : 0.78;
+  if (actor.kind === 'form') actor.baseScale = 0.78;
   actor.spin = (random() < 0.5 ? -1 : 1) * (0.04 + random() * 0.05);
   actor.roll = (random() - 0.5) * 0.12;
   actor.swirl = random() * Math.PI * 2;
   actor.turns = (random() < 0.5 ? -1 : 1) * (0.85 + random() * 1.15);
   actor.orbit = 1.4 + random() * 2.2;
   actor.sink = 0.8 + random() * 2.2;
-  actor.delay = (pathIndex / Math.max(1, count - 1)) * 0.84;
+  actor.delay = 0;
 }
 
 function separateFood(actors, random) {
@@ -131,7 +162,12 @@ export function applyObjects(actors, cameraZ, progress, reduced, portrait, viewA
     const halfW = halfH * Math.max(portrait ? 0.42 : 0.75, viewAspect || 1);
     const angularCap = (halfW * (portrait ? 0.46 : 0.36)) / unit;
     const flightScale = Math.min(portrait ? 1.12 : 1.02, angularCap, actor.baseScale * approach * (portrait ? 1.05 : 1));
-    const scale = flightScale * (1 - smoothstep(clamp01((pull - 0.05) / 0.9)));
+    let compensate = 1;
+    if (phase.suction > 0 && flightDistance > 1 && basis) {
+      const liveDist = basis.z - flightZ;
+      compensate = Math.min(1, Math.max(0.12, liveDist / flightDistance));
+    }
+    const scale = flightScale * compensate * (1 - smoothstep(clamp01(pull / 0.94)));
     const imagesOpen = smoothstep(clamp01((phase.t - 0.1) / 0.04));
     const body = unit * Math.max(scale, flightScale);
     const outside = Math.abs(flightX) > halfW + body * 0.35 || Math.abs(flightY) > halfH + body * 0.45;
@@ -144,13 +180,16 @@ export function applyObjects(actors, cameraZ, progress, reduced, portrait, viewA
       return;
     }
     const aspect = actor.aspect || 1;
+    const span = Math.max(scale, 0.001);
     actor.object.position.set(x, y, z);
     actor.object.rotation.set(
       0,
       0,
       actor.roll + Math.sin(progress * Math.PI * 2 + actor.swirl) * actor.spin * motion * (1 - pull) + pull * actor.turns * Math.PI * 2.15
     );
-    actor.object.scale.set(Math.max(scale, 0.001) * aspect, Math.max(scale, 0.001), 1);
+    if (actor.kind === 'form') actor.object.scale.set(span, span, span);
+    else actor.object.scale.set(span * aspect, span, 1);
+    if (actor.localPose) actor.localPose(progress, pull, motion);
     if (actor.material) actor.material.opacity = flying ? imagesOpen : 1;
     actor.object.visible = true;
     if (flying && flightDistance > 8 && flightDistance < 22) prominent += 1;

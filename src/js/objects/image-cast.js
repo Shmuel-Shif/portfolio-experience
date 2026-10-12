@@ -1,6 +1,7 @@
 import { OBJECT_FILES, familyOf } from './image-catalog.js';
 import { assignHomes } from '../animation/object-motion.js';
 import { createFlightStories, weaveStories } from './flight-stories.js';
+import { createFlightForms } from './flight-forms.js';
 
 const sessionSeed = Math.floor(Math.random() * 0x7fffffff);
 
@@ -45,6 +46,11 @@ export function createImageCast(THREE, level) {
     textures.push(story.texture);
   });
   weaveStories(actors, stories);
+  const forms = createFlightForms(THREE, level);
+  forms.geometries.forEach((geometry) => geometries.push(geometry));
+  forms.materials.forEach((material) => materials.push(material));
+  forms.textures.forEach((texture) => textures.push(texture));
+  weaveStories(actors, forms.actors);
   assignHomes(actors, rng);
   const maxEdge = level === 'low' ? 384 : level === 'medium' ? 480 : 560;
 
