@@ -6,7 +6,10 @@
     <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#ffffff">
     <title>Portfolio</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">
   </head>
   <body>
     <main
@@ -18,9 +21,24 @@
       data-progress="0"
     >
       <!-- Three.js chaos scene mounts here and is revealed inside the black circle. -->
-      <div class="experience__viewport" data-stage-mount data-scene="pending" aria-hidden="true"></div>
+      <div class="experience__viewport" data-stage-mount data-scene="pending" aria-hidden="true">
+        <div class="experience__backdrop" data-scene-backdrop></div>
+        <div class="finale" data-finale aria-hidden="true">
+          <div class="finale__flash" data-finale-flash></div>
+          <p class="finale__line" data-finale-line aria-hidden="true">ששששש....</p>
+          <p class="finale__line" data-finale-next aria-hidden="true">עכשיו אפשר ליצור</p>
+        </div>
+      </div>
       <!-- Future business content starts after the opening timeline. -->
-      <div class="experience__content" data-content hidden></div>
+      <div class="experience__content" data-content hidden>
+        <section class="site-arrival" data-site-arrival>
+          <img src="assets/logo/logo-ful.png" alt="שמואל שיף" data-site-logo>
+        </section>
+        <div class="site-body" data-site-body></div>
+      </div>
+      <header class="site-header" data-site-header>
+        <img src="assets/logo/logo.png" alt="" data-site-header-logo>
+      </header>
 
       <div class="intro">
         <span class="intro__dot" aria-hidden="true"></span>
@@ -42,14 +60,9 @@
           <p class="loader__status" data-loader-status role="alert"></p>
         </div>
 
-        <p class="scroll-hint" data-scroll-hint aria-hidden="true">
-          <span class="scroll-hint__text">גללו כדי להיכנס</span>
-          <span class="scroll-hint__motion" aria-hidden="true">
-            <span class="scroll-hint__cue"></span>
-          </span>
-        </p>
+        <p class="scroll-hint" data-scroll-hint aria-hidden="true"></p>
       </div>
     </main>
-    <script src="script.js"></script>
+    <script type="module" src="src/js/main.js"></script>
   </body>
 </html>
