@@ -102,7 +102,8 @@ function createOpeningScene(THREE, mount, quality, cast) {
     renderer.domElement.style.width = `${width}px`;
     renderer.domElement.style.height = `${height}px`;
     camera.aspect = width / height;
-    camera.fov = width < 760 && height > width ? 40 : 46;
+    const portrait = height > width && width < 1100;
+    camera.fov = portrait ? 40 : 46;
     camera.updateProjectionMatrix();
     renderer.render(scene, camera);
   }
@@ -110,10 +111,12 @@ function createOpeningScene(THREE, mount, quality, cast) {
   function seek(nextProgress, epilogue) {
     if (disposed) return;
     const progress = clamp01(nextProgress);
-    const narrow = (mount.clientWidth || window.innerWidth) < 760;
-    const cameraState = applyCamera(camera, progress, reduced, narrow);
+    const width = mount.clientWidth || window.innerWidth;
+    const height = mount.clientHeight || window.innerHeight;
+    const portrait = height > width && width < 1100;
+    const cameraState = applyCamera(camera, progress, reduced, portrait);
     const phase = epilogue ? { ...cameraState.phase, ...epilogue } : cameraState.phase;
-    const prominent = applyObjects(cast.actors, cameraState.cruiseZ, progress, reduced, narrow);
+    const prominent = applyObjects(cast.actors, cameraState.cruiseZ, progress, reduced, portrait, width / Math.max(1, height));
     life.seek(progress, camera);
     const lifeShown = life.shown();
     mount.dataset.cells = lifeShown.cells ? '1' : '0';

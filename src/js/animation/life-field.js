@@ -161,7 +161,8 @@ export function createLifeField(THREE, level) {
     const imagesLead = phase.t > 0.1;
 
     cells.visible = cellsIn > 0.02 && phase.t < 0.43;
-    const portrait = camera && camera.aspect < 0.85;
+    const portrait = camera && camera.aspect < 1;
+    const half = portrait ? Math.tan((40 * Math.PI) / 360) * camera.aspect : 1;
     const dustFade = dustIn * (1 - smoothstep(clamp01((pull - 0.2) / 0.62)));
     dust.visible = dustFade > 0.03 && phase.spiralIn < 0.4;
     dust.material.opacity = 0.7 * dustFade;
@@ -172,10 +173,12 @@ export function createLifeField(THREE, level) {
       const ahead = cameraZ - cell.z;
       const pass = clamp01((24 - ahead) / 26);
       const side = Math.sign(cell.x || (index % 2 === 0 ? 1 : -1));
-      const reach = (cell.scale > 1.4 ? 5.4 : 8.4) * (portrait ? 0.42 : 1);
+      const reach = portrait
+        ? Math.max(0.8, Math.min(2.6, half * (cell.scale > 1.4 ? 5.2 : 7)))
+        : (cell.scale > 1.4 ? 5.4 : 8.4);
       const angle = cell.phase + pull * (2.5 + index * 0.01);
       let x = side * (reach - pass * reach * 2);
-      let y = cell.y * Math.sin(pass * Math.PI);
+      let y = cell.y * Math.sin(pass * Math.PI) * (portrait ? 0.62 : 1);
       let z = cell.z - (1 - pass) * 12 + pass * 3;
       const local = clamp01((pull - (index % 7) * 0.02) / 0.82);
       const swallowed = phase.spiralIn > 0.08 ? smoothstep(clamp01((local - 0.58) / 0.36)) : 0;
