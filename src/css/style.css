@@ -136,29 +136,41 @@ body {
   inset: 0;
   z-index: 0;
   background: #000000;
+  opacity: 0;
   pointer-events: none;
+  transform-origin: center center;
 }
 
-.experience[data-sealed="true"] .experience__content {
-  background: transparent;
+.experience[data-arrival="enter"] .arrival-sky {
+  animation: arrival-stars 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-.experience[data-sealed="true"] .site-arrival {
-  animation: arrival-from-center 3.4s cubic-bezier(0.76, 0, 0.18, 1) both;
+.experience[data-arrival="enter"] .site-arrival__logo,
+.experience[data-arrival="enter"] .site-arrival__halo {
+  animation: arrival-mark 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.experience[data-sealed="true"] .site-arrival__logo,
-.experience[data-sealed="true"] .site-arrival__halo {
+.experience[data-sealed="true"]:not([data-arrival="enter"]) .arrival-sky,
+.experience[data-sealed="true"]:not([data-arrival="enter"]) .site-arrival__logo,
+.experience[data-sealed="true"]:not([data-arrival="enter"]) .site-arrival__halo {
   opacity: 1;
+  transform: none;
 }
 
-@keyframes arrival-from-center {
+@keyframes arrival-stars {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes arrival-mark {
   from {
-    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+    transform: scale(0.965);
   }
 
   to {
-    clip-path: circle(150% at 50% 50%);
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -182,6 +194,7 @@ body {
   background: radial-gradient(ellipse at center, rgba(110, 190, 220, 0.1), rgba(110, 190, 220, 0) 68%);
   opacity: 0;
   pointer-events: none;
+  transform-origin: center center;
 }
 
 .site-arrival__logo {
@@ -192,6 +205,7 @@ body {
   margin: 0;
   border: 0;
   opacity: 0;
+  transform-origin: center center;
 }
 
 .site-header {
@@ -490,12 +504,20 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .intro__dot,
-  .site-arrival {
+  .arrival-sky,
+  .site-arrival__logo,
+  .site-arrival__halo {
     animation: none;
   }
 
-  .experience[data-sealed="true"] .site-arrival {
-    clip-path: none;
+  .experience[data-arrival="enter"] .arrival-sky,
+  .experience[data-arrival="enter"] .site-arrival__logo,
+  .experience[data-arrival="enter"] .site-arrival__halo,
+  .experience[data-sealed="true"] .arrival-sky,
+  .experience[data-sealed="true"] .site-arrival__logo,
+  .experience[data-sealed="true"] .site-arrival__halo {
+    opacity: 1;
+    transform: none;
   }
 
   .site-header,

@@ -87,14 +87,9 @@ function createExperience(root) {
       ? scrollShift
       : (film ? film.site * landed : 0);
     root.style.setProperty('--content-shift', shift.toFixed(2));
-    const logoReveal = film && root.dataset.sealed !== 'true' ? film.logo : (root.dataset.sealed === 'true' ? 1 : 0);
-    const arrivalLogo = root.querySelector('[data-site-logo]');
-    const arrivalHalo = root.querySelector('.site-arrival__halo');
-    if (arrivalLogo) {
-      arrivalLogo.style.opacity = logoReveal.toFixed(3);
-      arrivalLogo.style.transform = 'none';
+    if (root.dataset.sealed === 'true' && !root.dataset.arrival) {
+      root.dataset.arrival = skipOpening ? 'shown' : 'enter';
     }
-    if (arrivalHalo) arrivalHalo.style.opacity = '1';
     const siteHeader = root.querySelector('[data-site-header]');
     const headerReveal = root.dataset.sealed === 'true'
       ? clamp01((scrollShift - landed) / Math.max(1, span * 0.42))
