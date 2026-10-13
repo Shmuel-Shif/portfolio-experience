@@ -10,6 +10,7 @@ export function createSpiral(THREE) {
       uSpin: { value: 0 },
       uGrow: { value: 0 },
       uAspect: { value: 1 },
+      uFov: { value: 46 },
       uColor: { value: 0 },
       uGlow: { value: 0 },
     },
@@ -26,33 +27,76 @@ export function createSpiral(THREE) {
       uniform float uSpin;
       uniform float uGrow;
       uniform float uAspect;
+      uniform float uFov;
       uniform float uColor;
       uniform float uGlow;
+
+      float ribbon(vec3 p) {
+        float travel = uSpin * 0.22;
+        float s = p.x * 0.62 + p.z * 0.16 - travel;
+        float radius = mix(0.62, 0.9, smoothstep(0.72, 1.35, uAspect));
+        float a = s * 1.05 + uSpin * 0.38;
+        vec3 center = vec3(p.x, cos(a) * radius, -2.7 + sin(a) * radius);
+        vec3 tangent = normalize(vec3(1.0, -sin(a) * radius * 0.65, cos(a) * radius * 0.65));
+        vec3 radial = normalize(vec3(0.0, cos(a), sin(a)));
+        vec3 binormal = normalize(cross(tangent, radial));
+        vec3 rel = p - center;
+        float across = dot(rel, radial);
+        float thick = dot(rel, binormal);
+        vec2 d = abs(vec2(thick, across)) - vec2(0.016, 0.26);
+        return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+      }
+
+      float ribbonAcross(vec3 p) {
+        float travel = uSpin * 0.22;
+        float s = p.x * 0.62 + p.z * 0.16 - travel;
+        float radius = mix(0.62, 0.9, smoothstep(0.72, 1.35, uAspect));
+        float a = s * 1.05 + uSpin * 0.38;
+        vec3 center = vec3(p.x, cos(a) * radius, -2.7 + sin(a) * radius);
+        vec3 radial = normalize(vec3(0.0, cos(a), sin(a)));
+        return dot(p - center, radial);
+      }
+
       void main() {
-        vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
-        float r = length(p);
-        float angle = atan(p.y, p.x);
-        float cover = 0.5 * length(vec2(uAspect, 1.0));
-        float radius = max(uGrow, 0.0) * cover * 1.25;
-        float mask = 1.0 - smoothstep(radius, radius + 0.008, r);
-        if (mask < 0.004) discard;
-        float spiral = sin(angle * 8.0 - log(max(r, 0.0015)) * 10.0 + uSpin);
-        float fine = sin(angle * 16.0 - log(max(r, 0.0015)) * 20.0 - uSpin * 0.5);
-        float ink = step(0.0, spiral);
-        vec3 light = mix(vec3(1.0), vec3(0.62, 0.28, 0.98), uColor);
-        vec3 dark = mix(vec3(0.0), vec3(0.04, 0.12, 0.62), uColor);
-        vec3 color = mix(light, dark, max(ink, step(0.94, fine)));
-        color = mix(color, vec3(0.95, 0.62, 0.16), uColor * step(0.97, fine));
+        float halfH = tan(radians(uFov) * 0.5) * 1.2;
+        float halfW = halfH * max(uAspect, 0.2);
+        vec3 origin = vec3(0.0);
+        vec3 ray = normalize(vec3((vUv - 0.5) * vec2(halfW, halfH) * 2.0, -1.2));
+        float travel = 0.2;
+        float hit = -1.0;
+        for (int i = 0; i < 42; i++) {
+          float dist = ribbon(origin + ray * travel);
+          if (dist < 0.006) {
+            hit = travel;
+            break;
+          }
+          travel += max(dist * 0.82, 0.018);
+          if (travel > 8.0) break;
+        }
         float glowAmt = clamp(uGlow, 0.0, 1.0);
-        float distN = r / max(cover, 0.0008);
-        float reach = mix(0.08, 1.75, glowAmt);
-        float spread = exp(-distN * distN / (reach * reach + 0.0001));
-        float illumination = spread * glowAmt;
-        float fill = smoothstep(0.86, 1.0, glowAmt);
-        illumination = clamp(illumination + fill * (1.0 - smoothstep(0.02, 1.25, distN)), 0.0, 1.0);
-        vec3 bloom = mix(vec3(0.58, 0.66, 0.82), vec3(0.96, 0.97, 0.98), illumination);
-        color = mix(color, max(color, bloom), illumination);
-        gl_FragColor = vec4(color, mask);
+        float appear = smoothstep(0.02, 0.62, uGrow);
+        if (hit < 0.0 && glowAmt < 0.28) discard;
+        vec3 pos = origin + ray * max(hit, 1.6);
+        vec3 normal = normalize(vec3(
+          ribbon(pos + vec3(0.012, 0.0, 0.0)) - ribbon(pos - vec3(0.012, 0.0, 0.0)),
+          ribbon(pos + vec3(0.0, 0.012, 0.0)) - ribbon(pos - vec3(0.0, 0.012, 0.0)),
+          ribbon(pos + vec3(0.0, 0.0, 0.012)) - ribbon(pos - vec3(0.0, 0.0, 0.012))
+        ));
+        float across = hit < 0.0 ? 0.0 : ribbonAcross(pos);
+        float light = clamp(dot(normal, normalize(vec3(0.25, 0.72, 0.45))), 0.0, 1.0);
+        float edge = smoothstep(0.26, 0.08, abs(across));
+        vec3 cyan = vec3(0.494, 0.906, 1.0);
+        vec3 color = mix(vec3(0.02), vec3(0.96), light);
+        color = mix(color, vec3(0.0), 1.0 - edge);
+        color = mix(color, cyan, uColor * (0.35 + edge * 0.45));
+        float miss = hit < 0.0 ? 1.0 : 0.0;
+        float illumination = glowAmt * mix(edge, 0.55, glowAmt);
+        illumination = max(illumination, smoothstep(0.78, 1.0, glowAmt) * (1.0 - miss * 0.35));
+        color = mix(color, vec3(0.97), clamp(illumination, 0.0, 1.0));
+        float alpha = mix(appear * edge, appear * (0.22 + illumination), miss);
+        alpha = max(alpha, appear * illumination * 0.85);
+        if (alpha < 0.012) discard;
+        gl_FragColor = vec4(color, alpha);
       }
     `,
   });
@@ -77,6 +121,7 @@ export function createSpiral(THREE) {
       mesh.translateZ(-distance);
       mesh.scale.set(width * 0.5, height * 0.5, 1);
       material.uniforms.uAspect.value = aspect;
+      material.uniforms.uFov.value = camera.fov || 46;
       material.uniforms.uGrow.value = grow * (aspect < 0.85 ? 1.2 : 1);
       material.uniforms.uColor.value = phase.color || 0;
       material.uniforms.uGlow.value = phase.glow || 0;

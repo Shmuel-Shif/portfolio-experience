@@ -20,7 +20,7 @@ export function phases(progress) {
   const t = clamp01(progress);
   const flightU = clamp01(t / FLIGHT_END);
   const flight = flightU + (smoothstep(flightU) - flightU) * 0.15;
-  const suction = gentleStep((t - FLIGHT_END) / 0.32);
+  const suction = gentleStep((t - FLIGHT_END) / 0.16);
   const spiralIn = smoothstep(clamp01((t - FLIGHT_END) / 0.045));
   const color = smoothstep(clamp01((t - 0.78) / 0.1));
   const shrink = smoothstep(clamp01((t - 0.88) / 0.018));

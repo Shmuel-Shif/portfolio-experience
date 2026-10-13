@@ -1,5 +1,6 @@
 import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } from './animation/timeline.js';
 import { createArrivalGalaxy } from './arrival-galaxy.js';
+import { mountWorksRail } from './works-rail.js';
 import { mountOpeningScene } from './opening-scene.js';
 
 const ASSET_MANIFEST = [];
@@ -115,6 +116,18 @@ function createExperience(root) {
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) scroll.wake();
+  });
+  mountWorksRail(root.querySelector('[data-works-rail]'));
+  root.querySelectorAll('[data-arrival-link]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      if (root.dataset.sealed !== 'true') return;
+      const id = link.getAttribute('href') || '';
+      const target = id.startsWith('#') ? root.querySelector(id) : null;
+      if (!target) return;
+      event.preventDefault();
+      const span = root.clientHeight || window.innerHeight;
+      scroll.seekContent(span + target.offsetTop);
+    });
   });
   const menuToggle = root.querySelector('[data-menu-toggle]');
   const siteHeader = root.querySelector('[data-site-header]');
@@ -311,6 +324,13 @@ function createScrollController(root, options) {
   };
   let touchY = null;
 
+  function fitContentLength() {
+    const span = root.clientHeight || window.innerHeight;
+    const content = root.querySelector('[data-content]');
+    const height = content && !content.hidden ? content.scrollHeight : 0;
+    state.contentLength = Math.max(span * 2.6, height);
+  }
+
   function maxOffset() {
     return state.openingLength + state.contentLength;
   }
@@ -496,7 +516,10 @@ function createScrollController(root, options) {
     const displayedProgress = Math.min(1, Math.max(0, state.offset / previousOpening));
     const displayedContent = Math.max(0, state.offset - previousOpening);
     state.openingLength = measureOpeningLength();
-    if (state.sealed) state.min = state.openingLength + state.landedShift;
+    if (state.sealed) {
+      state.min = state.openingLength + state.landedShift;
+      fitContentLength();
+    }
     state.target = clampOffset(openingProgress * state.openingLength + contentOffset);
     state.offset = clampOffset(displayedProgress * state.openingLength + displayedContent);
     wake();
@@ -547,8 +570,6 @@ function createScrollController(root, options) {
       state.sealed = true;
       state.pending = 0;
       state.aim = state.offset;
-      const span = root.clientHeight || window.innerHeight;
-      state.contentLength = span * 2.6;
       state.landedShift = Math.max(0, landedShift);
       const landed = state.openingLength + state.landedShift;
       state.min = landed;
@@ -556,6 +577,7 @@ function createScrollController(root, options) {
       markOpeningSeen();
       const content = root.querySelector('[data-content]');
       if (content) content.hidden = false;
+      fitContentLength();
       state.offset = clampOffset(Math.max(state.offset, landed));
       state.aim = state.offset;
       state.target = state.offset;
@@ -572,6 +594,13 @@ function createScrollController(root, options) {
       root.addEventListener('touchcancel', onTouchEnd, { passive: true });
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('resize', onResize);
+    },
+    seekContent(shift) {
+      if (!state.sealed || !Number.isFinite(shift)) return;
+      const next = clampOffset(state.openingLength + Math.max(state.landedShift, shift));
+      state.pending = next - state.offset;
+      state.aim = next;
+      wake();
     },
     wake() {
       wake();

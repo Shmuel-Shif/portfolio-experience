@@ -208,6 +208,75 @@ body {
   transform-origin: center center;
 }
 
+.site-arrival__actions {
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: calc(6svh + 18px);
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.experience[data-arrival="enter"] .site-arrival__actions {
+  animation: arrival-actions 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: auto;
+}
+
+.experience[data-sealed="true"]:not([data-arrival="enter"]) .site-arrival__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.site-arrival__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1px solid rgba(126, 231, 255, 0.72);
+  background: transparent;
+  color: #ffffff;
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 0.35s ease, border-color 0.35s ease;
+}
+
+.site-arrival__action:hover,
+.site-arrival__action:focus-visible {
+  border-color: #7ee7ff;
+  background: rgba(126, 231, 255, 0.1);
+}
+
+@media (max-width: 640px) {
+  .site-arrival__actions {
+    right: 12px;
+    bottom: calc(7svh + 12px);
+    left: 12px;
+    gap: 10px;
+  }
+
+  .site-arrival__action {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+}
+
+@keyframes arrival-actions {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .site-header {
   --header-reveal: 0;
   position: fixed;
@@ -359,8 +428,191 @@ body {
 }
 
 .site-body {
-  min-height: 80vh;
-  background: #ffffff;
+  background: #000000;
+}
+
+.works {
+  padding: calc(108px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 96px max(24px, env(safe-area-inset-left, 0px));
+  color: #ffffff;
+}
+
+.works__intro {
+  max-width: 920px;
+  margin: 0 auto 40px;
+}
+
+.works__title {
+  margin: 0;
+  color: #ffffff;
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: clamp(36px, 6vw, 76px);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.works__lead {
+  max-width: 38rem;
+  margin: 22px 0 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.works-rail {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.works-rail__viewport {
+  height: min(540px, 70vw);
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
+  touch-action: pan-y;
+}
+
+.works-rail__track {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.works-rail__status {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.work-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, 56vw);
+  height: min(440px, 58vw);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background: #07090c;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.38);
+  transform-style: preserve-3d;
+}
+
+.works-rail:not([data-dragging="true"]) .work-card {
+  transition: transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.7s ease, border-color 0.7s ease, box-shadow 0.7s ease;
+}
+
+.work-card[data-active="true"] {
+  border-color: rgba(126, 231, 255, 0.55);
+  box-shadow:
+    0 34px 70px rgba(0, 0, 0, 0.48),
+    0 0 42px rgba(126, 231, 255, 0.14);
+}
+
+.work-card__stage {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #05070a;
+}
+
+.work-card__shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.work-card__mark {
+  margin: 0;
+  color: #ffffff;
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 600;
+  line-height: 0.95;
+}
+
+.work-card__note,
+.work-card__kicker {
+  margin: 0;
+  color: #7ee7ff;
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.work-card__copy {
+  display: grid;
+  gap: 10px;
+  padding: 24px 32px 32px;
+}
+
+.work-card__title {
+  margin: 0;
+  color: #ffffff;
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.work-card__text {
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: Rubik, "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.65;
+  opacity: 0;
+}
+
+.work-card[data-active="true"] .work-card__text {
+  max-height: 5em;
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .works {
+    padding: calc(88px + env(safe-area-inset-top, 0px)) 12px 64px;
+  }
+
+  .works__intro {
+    margin-bottom: 24px;
+  }
+
+  .works-rail__viewport {
+    height: min(460px, 112vw);
+  }
+
+  .work-card {
+    width: min(240px, 58vw);
+    height: min(360px, 92vw);
+    border-radius: 16px;
+  }
+
+  .work-card__copy {
+    padding: 20px;
+  }
+
+  .work-card__text {
+    font-size: 15px;
+  }
 }
 
 .experience[data-sealed="true"] .experience__viewport {
@@ -503,6 +755,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .work-card {
+    transition: none;
+  }
+
   .intro__dot,
   .arrival-sky,
   .site-arrival__logo,
@@ -513,9 +769,11 @@ body {
   .experience[data-arrival="enter"] .arrival-sky,
   .experience[data-arrival="enter"] .site-arrival__logo,
   .experience[data-arrival="enter"] .site-arrival__halo,
+  .experience[data-arrival="enter"] .site-arrival__actions,
   .experience[data-sealed="true"] .arrival-sky,
   .experience[data-sealed="true"] .site-arrival__logo,
-  .experience[data-sealed="true"] .site-arrival__halo {
+  .experience[data-sealed="true"] .site-arrival__halo,
+  .experience[data-sealed="true"] .site-arrival__actions {
     opacity: 1;
     transform: none;
   }
