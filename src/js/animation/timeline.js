@@ -1,5 +1,7 @@
 export const PATH_SPAN = 548;
 export const FLIGHT_END = 0.58;
+const SUCTION_SPAN = 0.08;
+const SUCTION_END = FLIGHT_END + SUCTION_SPAN;
 
 export function clamp01(value) {
   if (!Number.isFinite(value)) return 0;
@@ -20,20 +22,20 @@ export function phases(progress) {
   const t = clamp01(progress);
   const flightU = clamp01(t / FLIGHT_END);
   const flight = flightU + (smoothstep(flightU) - flightU) * 0.15;
-  const suction = gentleStep((t - FLIGHT_END) / 0.16);
+  const suction = gentleStep((t - FLIGHT_END) / SUCTION_SPAN);
   const spiralIn = smoothstep(clamp01((t - FLIGHT_END) / 0.045));
-  const color = smoothstep(clamp01((t - 0.78) / 0.1));
-  const shrink = smoothstep(clamp01((t - 0.88) / 0.018));
-  const glow = smoothstep(clamp01((t - 0.864) / 0.056));
-  const white = smoothstep(clamp01((t - 0.922) / 0.008));
-  const line = smoothstep(clamp01((t - 0.92) / 0.012));
-  const lineOut = smoothstep(clamp01((t - 0.948) / 0.008));
-  const lineIn = smoothstep(clamp01((t - 0.956) / 0.01));
-  const lineExit = smoothstep(clamp01((t - 0.974) / 0.008));
-  const night = smoothstep(clamp01((t - 0.98) / 0.008));
-  const logo = smoothstep(clamp01((t - 0.984) / 0.008));
-  const header = smoothstep(clamp01((t - 0.986) / 0.006));
-  const site = smoothstep(clamp01((t - 0.988) / 0.012));
+  const color = smoothstep(clamp01((t - (SUCTION_END - 0.03)) / 0.1));
+  const shrink = smoothstep(clamp01((t - (SUCTION_END - 0.005)) / 0.018));
+  const glow = smoothstep(clamp01((t - (SUCTION_END - 0.009)) / 0.056));
+  const white = smoothstep(clamp01((t - (SUCTION_END + 0.022)) / 0.008));
+  const line = smoothstep(clamp01((t - (SUCTION_END + 0.02)) / 0.012));
+  const lineOut = smoothstep(clamp01((t - (SUCTION_END + 0.048)) / 0.008));
+  const lineIn = smoothstep(clamp01((t - (SUCTION_END + 0.056)) / 0.01));
+  const lineExit = smoothstep(clamp01((t - (SUCTION_END + 0.074)) / 0.008));
+  const night = smoothstep(clamp01((t - (SUCTION_END + 0.08)) / 0.008));
+  const logo = smoothstep(clamp01((t - (SUCTION_END + 0.084)) / 0.008));
+  const header = smoothstep(clamp01((t - (SUCTION_END + 0.086)) / 0.006));
+  const site = smoothstep(clamp01((t - (SUCTION_END + 0.088)) / 0.012));
   return {
     t,
     flight,
@@ -58,7 +60,7 @@ export function phases(progress) {
 }
 
 export const ILLUSION_GATE = FLIGHT_END;
-export const ILLUSION_DONE = 0.933;
+export const ILLUSION_DONE = SUCTION_END + 0.033;
 const SUCTION_SLOW = 1.45;
 const ILLUSION_SUCK = 10;
 const ILLUSION_HOLD = 2.05;
