@@ -3,6 +3,7 @@ import { createArrivalGalaxy } from './arrival-galaxy.js';
 import { mountAbout } from './about.js';
 import { mountGeometryField } from './geometry-field.js';
 import { mountToolkit } from './toolkit.js';
+import { mountContact } from './contact.js';
 import { mountServices } from './services.js';
 import { mountWorksRail } from './works-rail.js';
 import { mountOpeningScene } from './opening-scene.js';
@@ -11,10 +12,8 @@ const ASSET_MANIFEST = [];
 const OPENING_MIN = 1200;
 const OPENING_MAX = 2600;
 const SCENE_TO_CIRCLE = 2;
-const OPENING_SCALE = 0.32;
 const OPENING_SEEN_KEY = 'portfolio-opening-seen';
-const BLACK_HOLE_SCROLL = 1 / 3;
-const REVEAL_GATE = 0.68965;
+const DOT_SCROLL = 1 / 3;
 
 function mobileOpening() {
   return window.matchMedia('(pointer: coarse)').matches;
@@ -66,7 +65,7 @@ function createExperience(root) {
     let circleProgress = clamp01(sample.openingProgress / circleShare);
     let scrolledScene = clamp01((sample.openingProgress - circleShare) / (1 - circleShare));
     if (mobileOpening()) {
-      const mapped = mapMobileOpening(sample.offset);
+      const mapped = mapDotOpening(sample.offset);
       circleProgress = mapped.circleProgress;
       scrolledScene = mapped.sceneProgress;
     }
@@ -138,6 +137,7 @@ function createExperience(root) {
   mountAbout(root);
   mountGeometryField(root);
   mountToolkit(root);
+  mountContact(root);
   root.querySelectorAll('[data-arrival-link]').forEach((link) => {
     link.addEventListener('click', (event) => {
       if (root.dataset.sealed !== 'true') return;
@@ -165,8 +165,9 @@ function createExperience(root) {
     siteMenu.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', (event) => {
         setMenu(false);
-        if (link.getAttribute('href') !== '#services' || root.dataset.sealed !== 'true') return;
-        const target = root.querySelector('#services');
+        const href = link.getAttribute('href') || '';
+        if ((href !== '#services' && href !== '#contact') || root.dataset.sealed !== 'true') return;
+        const target = root.querySelector(href);
         if (!target) return;
         event.preventDefault();
         const span = root.clientHeight || window.innerHeight;
@@ -235,51 +236,28 @@ function measureCircleLength() {
   return Math.min(OPENING_MAX, Math.max(OPENING_MIN, Math.round(height * 2.4)));
 }
 
-function mobileOpeningSegments() {
+function mapDotOpening(offset) {
   const circle = measureCircleLength();
   const scene = circle * SCENE_TO_CIRCLE;
-  const approach = ILLUSION_GATE * scene;
-  const hole = (REVEAL_GATE - ILLUSION_GATE) * scene * BLACK_HOLE_SCROLL;
-  const tail = (1 - REVEAL_GATE) * scene;
-  return { circle, approach, hole, tail, total: circle + approach + hole + tail };
-}
-
-function mapMobileOpening(offset) {
-  const parts = mobileOpeningSegments();
-  let remain = Math.max(0, offset);
-  if (remain <= parts.circle) {
+  const dot = circle * DOT_SCROLL;
+  const remain = Math.max(0, offset);
+  if (remain <= dot) {
     return {
-      circleProgress: parts.circle > 0 ? remain / parts.circle : 1,
+      circleProgress: dot > 0 ? remain / dot : 1,
       sceneProgress: 0,
     };
   }
-  remain -= parts.circle;
-  if (remain <= parts.approach) {
-    return {
-      circleProgress: 1,
-      sceneProgress: parts.approach > 0 ? (remain / parts.approach) * ILLUSION_GATE : ILLUSION_GATE,
-    };
-  }
-  remain -= parts.approach;
-  if (remain <= parts.hole) {
-    const span = REVEAL_GATE - ILLUSION_GATE;
-    return {
-      circleProgress: 1,
-      sceneProgress: ILLUSION_GATE + (parts.hole > 0 ? (remain / parts.hole) * span : span),
-    };
-  }
-  remain -= parts.hole;
-  const tailSpan = 1 - REVEAL_GATE;
   return {
     circleProgress: 1,
-    sceneProgress: Math.min(1, REVEAL_GATE + (parts.tail > 0 ? (remain / parts.tail) * tailSpan : tailSpan)),
+    sceneProgress: clamp01((remain - dot) / scene),
   };
 }
 
 function measureOpeningLength() {
-  const full = measureCircleLength() * (1 + SCENE_TO_CIRCLE);
-  if (!mobileOpening()) return Math.max(720, Math.round(full * OPENING_SCALE));
-  return Math.max(720, Math.round(mobileOpeningSegments().total));
+  const circle = measureCircleLength();
+  const scene = circle * SCENE_TO_CIRCLE;
+  if (!mobileOpening()) return circle + scene;
+  return circle * DOT_SCROLL + scene;
 }
 
 function detectQuality() {
@@ -434,14 +412,19 @@ function createScrollController(root, options) {
   }
 
   function inScene() {
-    return state.offset >= state.openingLength * 0.5;
+    if (!mobileOpening()) return state.offset >= state.openingLength * 0.5;
+    const circle = measureCircleLength();
+    const dot = circle * DOT_SCROLL;
+    const scene = circle * SCENE_TO_CIRCLE;
+    return state.offset >= dot + scene * 0.25;
   }
 
   function openingNotch() {
-    const length = state.openingLength;
-    if (mobileOpening()) {
+    const length = mobileOpening()
+      ? measureCircleLength() * (1 + SCENE_TO_CIRCLE)
+      : state.openingLength;
+    if (mobileOpening() && state.offset < measureCircleLength() * DOT_SCROLL) {
       const span = root.clientHeight || window.innerHeight || 700;
-      if (inScene()) return Math.max(56, span * 0.18);
       return Math.max(84, span * 0.24);
     }
     if (inScene()) return Math.max(2.4, Math.min(4, length * 0.00072));
@@ -453,7 +436,10 @@ function createScrollController(root, options) {
   }
 
   function openingRate() {
-    return Math.max(280, state.openingLength * 0.11);
+    const length = mobileOpening()
+      ? measureCircleLength() * (1 + SCENE_TO_CIRCLE)
+      : state.openingLength;
+    return Math.max(280, length * 0.11);
   }
 
   function publish() {
