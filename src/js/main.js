@@ -2,6 +2,7 @@ import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } fr
 import { createArrivalGalaxy } from './arrival-galaxy.js';
 import { mountAbout } from './about.js';
 import { mountGeometryField } from './geometry-field.js';
+import { mountToolkit } from './toolkit.js';
 import { mountServices } from './services.js';
 import { mountWorksRail } from './works-rail.js';
 import { mountOpeningScene } from './opening-scene.js';
@@ -129,6 +130,7 @@ function createExperience(root) {
   mountServices(root);
   mountAbout(root);
   mountGeometryField(root);
+  mountToolkit(root);
   root.querySelectorAll('[data-arrival-link]').forEach((link) => {
     link.addEventListener('click', (event) => {
       if (root.dataset.sealed !== 'true') return;
