@@ -1,5 +1,8 @@
 import { ILLUSION_DONE, ILLUSION_GATE, epilogueAt, illusionProgress, phases } from './animation/timeline.js';
 import { createArrivalGalaxy } from './arrival-galaxy.js';
+import { mountAbout } from './about.js';
+import { mountGeometryField } from './geometry-field.js';
+import { mountServices } from './services.js';
 import { mountWorksRail } from './works-rail.js';
 import { mountOpeningScene } from './opening-scene.js';
 
@@ -118,6 +121,9 @@ function createExperience(root) {
     if (!document.hidden) scroll.wake();
   });
   mountWorksRail(root.querySelector('[data-works-rail]'));
+  mountServices(root);
+  mountAbout(root);
+  mountGeometryField(root);
   root.querySelectorAll('[data-arrival-link]').forEach((link) => {
     link.addEventListener('click', (event) => {
       if (root.dataset.sealed !== 'true') return;
@@ -139,9 +145,15 @@ function createExperience(root) {
       menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
     siteHeader.querySelectorAll('.site-nav a').forEach((link) => {
-      link.addEventListener('click', () => {
+      link.addEventListener('click', (event) => {
         delete siteHeader.dataset.menu;
         menuToggle.setAttribute('aria-expanded', 'false');
+        if (link.getAttribute('href') !== '#services' || root.dataset.sealed !== 'true') return;
+        const target = root.querySelector('#services');
+        if (!target) return;
+        event.preventDefault();
+        const span = root.clientHeight || window.innerHeight;
+        scroll.seekContent(span + target.offsetTop);
       });
     });
   }
