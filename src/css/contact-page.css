@@ -1,0 +1,188 @@
+html.passage-cover,
+html.passage-cover body {
+  background: #ffffff;
+}
+
+html.passage-cover body {
+  visibility: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  overflow-x: hidden;
+  color: #2b241c;
+  color-scheme: light;
+  font-family: "Times New Roman", David, "Noto Serif Hebrew", serif;
+  background-color: #efe6d4;
+  background-image:
+    radial-gradient(ellipse at 18% 0%, rgba(255, 252, 245, 0.7), transparent 42%),
+    radial-gradient(ellipse at 90% 100%, rgba(168, 140, 96, 0.08), transparent 46%),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(120, 96, 64, 0.018) 4px);
+}
+
+.sheet-scene {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100svh;
+  padding: 48px 28px 64px;
+}
+
+.sheet {
+  position: relative;
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  margin: 0;
+  padding: 40px 44px 36px;
+  color: #2b241c;
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(255, 252, 246, 0.8), transparent 28%),
+    radial-gradient(ellipse at 80% 88%, rgba(176, 148, 104, 0.08), transparent 32%),
+    linear-gradient(180deg, #f7f1e4 0%, #f3ead8 100%);
+  clip-path: polygon(
+    0.6% 2.2%, 8% 0.4%, 22% 1.4%, 38% 0.2%, 54% 1.2%, 72% 0.3%, 88% 1.3%, 99.2% 0.6%,
+    99.8% 12%, 99.2% 34%, 99.8% 58%, 99.3% 80%, 99.6% 98.4%,
+    86% 99.6%, 68% 98.8%, 48% 99.7%, 30% 98.9%, 12% 99.5%, 0.4% 97.6%,
+    0.2% 78%, 0.8% 52%, 0.2% 28%, 0.7% 8%
+  );
+  box-shadow: inset 0 0 0 1px rgba(122, 104, 82, 0.45);
+  filter: drop-shadow(0 10px 18px rgba(74, 58, 36, 0.12));
+}
+
+.sheet__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 2px, rgba(110, 86, 52, 0.03) 3px),
+    repeating-linear-gradient(0deg, transparent 0 5px, rgba(110, 86, 52, 0.025) 6px);
+}
+
+.sheet h1,
+.sheet__lead,
+.sheet__note,
+.sheet form,
+.sheet [data-plain-error] {
+  position: relative;
+}
+
+.sheet h1 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.sheet__lead,
+.sheet__note {
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+.sheet__lead {
+  font-size: 18px;
+}
+
+.sheet__note {
+  font-size: 15px;
+  color: #4a4034;
+}
+
+.sheet__rule {
+  width: min(100%, 280px);
+  height: 0;
+  margin: 18px auto 6px;
+  border-top: 1px solid rgba(90, 74, 56, 0.35);
+}
+
+.sheet form {
+  display: grid;
+}
+
+.sheet label {
+  display: block;
+  margin-top: 16px;
+  font-size: 15px;
+}
+
+.sheet input,
+.sheet select,
+.sheet textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(90, 74, 56, 0.4);
+  border-radius: 0;
+  background: transparent;
+  color: #2b241c;
+  font: inherit;
+  font-size: 16px;
+}
+
+.sheet textarea {
+  min-height: 110px;
+  resize: vertical;
+  border: 1px solid rgba(90, 74, 56, 0.35);
+  padding: 8px;
+}
+
+.sheet input:focus,
+.sheet select:focus,
+.sheet textarea:focus,
+.sheet button:focus-visible {
+  outline: 2px solid rgba(90, 64, 40, 0.45);
+  outline-offset: 2px;
+}
+
+.sheet button {
+  justify-self: center;
+  margin-top: 22px;
+  padding: 10px 28px;
+  border: 1px solid #3a2e22;
+  border-radius: 0;
+  background: #3a2e22;
+  color: #f6f0e4;
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.sheet button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.sheet [data-plain-error] {
+  margin: 14px 0 0;
+  color: #6e2218;
+  font-size: 15px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .sheet-scene {
+    padding: 24px 16px 40px;
+  }
+
+  .sheet {
+    width: 100%;
+    padding: 28px 18px 24px;
+  }
+
+  .sheet h1 {
+    font-size: 30px;
+  }
+
+  .sheet__lead {
+    font-size: 16px;
+  }
+}
