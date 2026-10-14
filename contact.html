@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>יצירת קשר</title>
+    <style>
+      html.passage-cover body { visibility: hidden; }
+      body { background: #ffffff; color: #000000; margin: 24px; }
+      h1 { font-size: 24px; font-weight: bold; margin: 0 0 16px; }
+      label { display: block; margin: 14px 0 0; }
+      input, select, textarea { display: block; margin-top: 4px; width: 320px; max-width: 100%; }
+      textarea { height: 140px; }
+      button { margin-top: 16px; }
+      p { margin: 14px 0 0; }
+    </style>
+    <script>
+      try {
+        if (sessionStorage.getItem('portfolio-contact-arrive') === '1') {
+          document.documentElement.className = 'passage-cover';
+        }
+      } catch (error) {}
+    </script>
+  </head>
+  <body>
+    <h1>יצירת קשר</h1>
+    <form data-plain-form action="" method="post">
+      <label for="full-name">שם מלא</label>
+      <input id="full-name" name="name" type="text" required autocomplete="name">
+
+      <label for="email">כתובת אימייל</label>
+      <input id="email" name="email" type="email" required autocomplete="email">
+
+      <label for="phone">מספר טלפון — לא חובה</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel">
+
+      <label for="project">סוג הפרויקט</label>
+      <select id="project" name="project" required>
+        <option value="אתר">אתר</option>
+        <option value="אפליקציה">אפליקציה</option>
+        <option value="מערכת לעסק">מערכת לעסק</option>
+        <option value="תפריט דיגיטלי">תפריט דיגיטלי</option>
+        <option value="משהו אחר">משהו אחר</option>
+      </select>
+
+      <label for="message">הודעה חופשית</label>
+      <textarea id="message" name="message" required></textarea>
+
+      <button type="submit">שליחת ההודעה</button>
+    </form>
+    <p data-plain-error hidden></p>
+    <script type="module" src="src/js/contact-form.js"></script>
+  </body>
+</html>

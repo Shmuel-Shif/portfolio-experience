@@ -198,6 +198,7 @@ function createExperience(root) {
     start() {
       if (skipOpening) {
         showFinishedSite(root, view, scroll);
+        restoreContactReturn(root, scroll);
         return;
       }
       waitForScene(stageMount)
@@ -216,6 +217,23 @@ function createExperience(root) {
       return assets;
     },
   };
+}
+
+function restoreContactReturn(root, scroll) {
+  let returning = false;
+  try {
+    returning = sessionStorage.getItem('portfolio-contact-return') === '1';
+    if (returning) sessionStorage.removeItem('portfolio-contact-return');
+  } catch (error) {
+    returning = false;
+  }
+  if (!returning) return;
+  window.requestAnimationFrame(() => {
+    const target = root.querySelector('#contact');
+    if (!target) return;
+    const span = root.clientHeight || window.innerHeight;
+    scroll.seekContent(span + target.offsetTop);
+  });
 }
 
 function showFinishedSite(root, view, scroll) {
@@ -384,6 +402,9 @@ function createScrollController(root, options) {
     lastTime: 0,
   };
   let touchY = null;
+  let touchStamp = 0;
+  let touchVelocity = 0;
+  let coast = 0;
 
   function fitContentLength() {
     const span = root.clientHeight || window.innerHeight;
@@ -479,6 +500,14 @@ function createScrollController(root, options) {
       const remain = state.aim - state.offset;
       if (Math.abs(remain) < 0.08) state.offset = state.aim;
       else state.offset = clampOffset(state.offset + remain * (1 - Math.exp(-dt / 0.062)));
+    } else if (coast !== 0 && state.sealed && mobileOpening()) {
+      const next = state.offset + coast * dt;
+      const clamped = clampOffset(next);
+      state.offset = clamped;
+      state.aim = clamped;
+      if (clamped !== next) coast = 0;
+      else coast *= Math.exp(-dt / 0.32);
+      if (Math.abs(coast) < 20) coast = 0;
     } else if (state.pending !== 0) {
       if (state.lambda <= 0) {
         state.offset = clampOffset(state.offset + state.pending);
@@ -502,7 +531,7 @@ function createScrollController(root, options) {
     const filming = (state.epilogue || state.illusion) && !state.sealed;
     const chasing = !state.sealed && Math.abs(state.aim - state.offset) > 0.08;
     const live = typeof options.onFrame === 'function' && options.onFrame(now);
-    if (state.pending !== 0 || chasing || filming || live) state.frame = requestAnimationFrame(step);
+    if (state.pending !== 0 || coast !== 0 || chasing || filming || live) state.frame = requestAnimationFrame(step);
     else {
       state.frame = 0;
       state.lastTime = 0;
@@ -546,11 +575,27 @@ function createScrollController(root, options) {
   }
 
   function onTouchStart(event) {
+    coast = 0;
+    touchVelocity = 0;
+    touchStamp = 0;
     if (!state.enabled || event.touches.length !== 1) {
       touchY = null;
       return;
     }
     touchY = event.touches[0].clientY;
+    touchStamp = performance.now();
+  }
+
+  function trackMobileScroll(delta) {
+    const now = performance.now();
+    const elapsed = touchStamp ? now - touchStamp : 16;
+    touchStamp = now;
+    touchVelocity = elapsed > 0 && elapsed < 90 ? delta / elapsed : 0;
+    state.pending = 0;
+    state.offset = clampOffset(state.offset + delta);
+    state.aim = state.offset;
+    state.target = state.offset;
+    wake();
   }
 
   function onTouchMove(event) {
@@ -561,11 +606,24 @@ function createScrollController(root, options) {
     event.preventDefault();
     if ((state.epilogue || state.illusion) && !state.sealed) return;
     if (delta === 0) return;
+    if (state.sealed && mobileOpening()) {
+      trackMobileScroll(delta);
+      return;
+    }
     pushInput(delta);
   }
 
   function onTouchEnd() {
+    if (state.sealed && mobileOpening() && touchY !== null) {
+      const idle = performance.now() - touchStamp;
+      coast = idle < 70 ? touchVelocity * 1000 : 0;
+      coast = Math.max(-3200, Math.min(3200, coast));
+      if (Math.abs(coast) < 80) coast = 0;
+      if (coast !== 0) wake();
+    }
     touchY = null;
+    touchStamp = 0;
+    touchVelocity = 0;
   }
 
   function onKeyDown(event) {
@@ -671,6 +729,7 @@ function createScrollController(root, options) {
     },
     seekContent(shift) {
       if (!state.sealed || !Number.isFinite(shift)) return;
+      coast = 0;
       const next = clampOffset(state.openingLength + Math.max(state.landedShift, shift));
       state.pending = next - state.offset;
       state.aim = next;

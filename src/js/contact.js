@@ -1,5 +1,4 @@
-// Replace with a verified mailto:, tel:, or https:// destination. Leave empty until one exists.
-const CONTACT_URL = '';
+import { bindContactPassage, consumeContactReturn, landOnPortfolio } from './contact-passage.js';
 
 export function mountContact(root) {
   const section = root.querySelector('[data-contact]');
@@ -8,15 +7,9 @@ export function mountContact(root) {
   if (year) year.textContent = String(new Date().getFullYear());
 
   const cta = section.querySelector('[data-contact-cta]');
-  if (cta) {
-    if (CONTACT_URL) {
-      cta.href = CONTACT_URL;
-    } else {
-      cta.addEventListener('click', (event) => {
-        event.preventDefault();
-      });
-    }
-  }
+  if (cta) bindContactPassage(cta);
+  const returning = consumeContactReturn();
+  if (returning) landOnPortfolio(root);
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) {
