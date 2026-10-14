@@ -10,7 +10,12 @@ const ASSET_MANIFEST = [];
 const OPENING_MIN = 1200;
 const OPENING_MAX = 2600;
 const SCENE_TO_CIRCLE = 2;
+const OPENING_SCALE = 0.32;
 const OPENING_SEEN_KEY = 'portfolio-opening-seen';
+
+function mobileOpening() {
+  return window.matchMedia('(pointer: coarse)').matches;
+}
 
 function openingAlreadySeen() {
   try {
@@ -208,7 +213,8 @@ function measureCircleLength() {
 }
 
 function measureOpeningLength() {
-  return measureCircleLength() * (1 + SCENE_TO_CIRCLE);
+  const full = measureCircleLength() * (1 + SCENE_TO_CIRCLE);
+  return Math.max(720, Math.round(full * OPENING_SCALE));
 }
 
 function detectQuality() {
@@ -368,6 +374,11 @@ function createScrollController(root, options) {
 
   function openingNotch() {
     const length = state.openingLength;
+    if (mobileOpening()) {
+      const span = root.clientHeight || window.innerHeight || 700;
+      if (inScene()) return Math.max(56, span * 0.18);
+      return Math.max(84, span * 0.24);
+    }
     if (inScene()) return Math.max(2.4, Math.min(4, length * 0.00072));
     return Math.max(16, Math.min(24, length * 0.0055));
   }
