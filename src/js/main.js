@@ -149,6 +149,25 @@ function createExperience(root) {
       scroll.seekContent(span + target.offsetTop);
     });
   });
+  root.querySelectorAll('[data-footer-link]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      if (root.dataset.sealed !== 'true') return;
+      const id = link.getAttribute('href') || '';
+      const target = id.startsWith('#') ? root.querySelector(id) : null;
+      if (!target) return;
+      event.preventDefault();
+      const span = root.clientHeight || window.innerHeight;
+      scroll.seekContent(span + target.offsetTop);
+    });
+  });
+  const footerTop = root.querySelector('[data-footer-top]');
+  if (footerTop) {
+    footerTop.addEventListener('click', (event) => {
+      if (root.dataset.sealed !== 'true') return;
+      event.preventDefault();
+      scroll.seekContent(0);
+    });
+  }
   const menuToggle = root.querySelector('[data-menu-toggle]');
   const siteHeader = root.querySelector('[data-site-header]');
   const siteMenu = siteHeader ? siteHeader.querySelector('.site-nav') : null;
