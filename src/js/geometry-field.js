@@ -113,6 +113,9 @@ function createGeometryField(THREE, section) {
   let radius = 1;
   let pointerActive = false;
   let touchActive = false;
+  let touchMode = '';
+  let touchOriginX = 0;
+  let touchOriginY = 0;
   let pointerX = 0;
   let pointerY = 0;
   let strength = 0;
@@ -569,20 +572,44 @@ function createGeometryField(THREE, section) {
     wake();
   }
 
-  function onTouchStart(event) {
-    if (event.touches.length !== 1) return;
-    const point = event.touches[0];
-    if (!projectPointer(point.clientX, point.clientY)) return;
-    rememberPointer(point.clientX, point.clientY);
-    touchActive = true;
-    pointerActive = true;
-    renderer.domElement.style.touchAction = 'none';
+  function releaseTouch() {
+    touchMode = '';
+    touchActive = false;
+    pointerActive = false;
+    strength = 0;
+    renderer.domElement.style.touchAction = 'pan-y';
     wake();
   }
 
-  function onTouchMove(event) {
-    if (!touchActive || event.touches.length !== 1) return;
+  function onTouchStart(event) {
+    if (event.touches.length !== 1) {
+      releaseTouch();
+      return;
+    }
     const point = event.touches[0];
+    touchOriginX = point.clientX;
+    touchOriginY = point.clientY;
+    touchMode = '';
+    touchActive = false;
+    pointerActive = false;
+  }
+
+  function onTouchMove(event) {
+    if (touchMode === 'scroll' || event.touches.length !== 1) return;
+    const point = event.touches[0];
+    if (touchMode !== 'drag') {
+      const dx = point.clientX - touchOriginX;
+      const dy = point.clientY - touchOriginY;
+      if (Math.hypot(dx, dy) < 10) return;
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        touchMode = 'scroll';
+        return;
+      }
+      touchMode = 'drag';
+      touchActive = true;
+      pointerActive = true;
+      renderer.domElement.style.touchAction = 'none';
+    }
     event.preventDefault();
     event.stopPropagation();
     rememberPointer(point.clientX, point.clientY);
@@ -591,12 +618,7 @@ function createGeometryField(THREE, section) {
   }
 
   function onTouchEnd() {
-    if (!touchActive) return;
-    touchActive = false;
-    pointerActive = false;
-    strength = 0;
-    renderer.domElement.style.touchAction = 'pan-y';
-    wake();
+    releaseTouch();
   }
 
   const observer = new IntersectionObserver((entries) => {

@@ -339,6 +339,8 @@ body {
 }
 
 .site-nav__toggle {
+  position: relative;
+  z-index: 10;
   display: none;
   align-items: center;
   gap: 8px;
@@ -362,6 +364,24 @@ body {
   height: 1px;
   background: currentColor;
   content: "";
+  transition: transform 0.28s ease, opacity 0.28s ease, top 0.28s ease;
+}
+
+.site-header[data-menu="open"] .site-nav__bars {
+  background: transparent;
+}
+
+.site-header[data-menu="open"] .site-nav__bars::before,
+.site-header[data-menu="open"] .site-nav__bars::after {
+  top: 0;
+}
+
+.site-header[data-menu="open"] .site-nav__bars::before {
+  transform: rotate(45deg);
+}
+
+.site-header[data-menu="open"] .site-nav__bars::after {
+  transform: rotate(-45deg);
 }
 
 .site-nav__bars {
@@ -1007,13 +1027,13 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 @media (max-width: 720px) {
   .geometry-field {
-    height: 72svh;
-    min-height: 420px;
+    height: 60svh;
+    min-height: 0;
   }
 }
 

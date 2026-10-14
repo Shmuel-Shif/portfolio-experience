@@ -13,6 +13,8 @@ const OPENING_MAX = 2600;
 const SCENE_TO_CIRCLE = 2;
 const OPENING_SCALE = 0.32;
 const OPENING_SEEN_KEY = 'portfolio-opening-seen';
+const BLACK_HOLE_SCROLL = 1 / 3;
+const REVEAL_GATE = 0.68965;
 
 function mobileOpening() {
   return window.matchMedia('(pointer: coarse)').matches;
@@ -61,8 +63,13 @@ function createExperience(root) {
   const stageMount = opening.getMount();
   scroll.subscribe((sample) => {
     const circleShare = 1 / (1 + SCENE_TO_CIRCLE);
-    const circleProgress = clamp01(sample.openingProgress / circleShare);
-    const scrolledScene = clamp01((sample.openingProgress - circleShare) / (1 - circleShare));
+    let circleProgress = clamp01(sample.openingProgress / circleShare);
+    let scrolledScene = clamp01((sample.openingProgress - circleShare) / (1 - circleShare));
+    if (mobileOpening()) {
+      const mapped = mapMobileOpening(sample.offset);
+      circleProgress = mapped.circleProgress;
+      scrolledScene = mapped.sceneProgress;
+    }
     let sceneProgress = scrolledScene;
     if (scroll.isIllusion()) {
       sceneProgress = sample.epilogue == null
@@ -144,17 +151,20 @@ function createExperience(root) {
   });
   const menuToggle = root.querySelector('[data-menu-toggle]');
   const siteHeader = root.querySelector('[data-site-header]');
-  if (menuToggle && siteHeader) {
-    menuToggle.addEventListener('click', () => {
-      const open = siteHeader.dataset.menu !== 'open';
+  const siteMenu = siteHeader ? siteHeader.querySelector('.site-nav') : null;
+  if (menuToggle && siteHeader && siteMenu) {
+    const setMenu = (open) => {
       if (open) siteHeader.dataset.menu = 'open';
       else delete siteHeader.dataset.menu;
       menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      menuToggle.setAttribute('aria-label', open ? 'סגירה' : 'תפריט');
+    };
+    menuToggle.addEventListener('click', () => {
+      setMenu(siteHeader.dataset.menu !== 'open');
     });
-    siteHeader.querySelectorAll('.site-nav a').forEach((link) => {
+    siteMenu.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', (event) => {
-        delete siteHeader.dataset.menu;
-        menuToggle.setAttribute('aria-expanded', 'false');
+        setMenu(false);
         if (link.getAttribute('href') !== '#services' || root.dataset.sealed !== 'true') return;
         const target = root.querySelector('#services');
         if (!target) return;
@@ -162,6 +172,17 @@ function createExperience(root) {
         const span = root.clientHeight || window.innerHeight;
         scroll.seekContent(span + target.offsetTop);
       });
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (siteHeader.dataset.menu !== 'open') return;
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (menuToggle.contains(target) || siteMenu.contains(target)) return;
+      setMenu(false);
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || siteHeader.dataset.menu !== 'open') return;
+      setMenu(false);
     });
   }
   if (!skipOpening) {
@@ -214,9 +235,51 @@ function measureCircleLength() {
   return Math.min(OPENING_MAX, Math.max(OPENING_MIN, Math.round(height * 2.4)));
 }
 
+function mobileOpeningSegments() {
+  const circle = measureCircleLength();
+  const scene = circle * SCENE_TO_CIRCLE;
+  const approach = ILLUSION_GATE * scene;
+  const hole = (REVEAL_GATE - ILLUSION_GATE) * scene * BLACK_HOLE_SCROLL;
+  const tail = (1 - REVEAL_GATE) * scene;
+  return { circle, approach, hole, tail, total: circle + approach + hole + tail };
+}
+
+function mapMobileOpening(offset) {
+  const parts = mobileOpeningSegments();
+  let remain = Math.max(0, offset);
+  if (remain <= parts.circle) {
+    return {
+      circleProgress: parts.circle > 0 ? remain / parts.circle : 1,
+      sceneProgress: 0,
+    };
+  }
+  remain -= parts.circle;
+  if (remain <= parts.approach) {
+    return {
+      circleProgress: 1,
+      sceneProgress: parts.approach > 0 ? (remain / parts.approach) * ILLUSION_GATE : ILLUSION_GATE,
+    };
+  }
+  remain -= parts.approach;
+  if (remain <= parts.hole) {
+    const span = REVEAL_GATE - ILLUSION_GATE;
+    return {
+      circleProgress: 1,
+      sceneProgress: ILLUSION_GATE + (parts.hole > 0 ? (remain / parts.hole) * span : span),
+    };
+  }
+  remain -= parts.hole;
+  const tailSpan = 1 - REVEAL_GATE;
+  return {
+    circleProgress: 1,
+    sceneProgress: Math.min(1, REVEAL_GATE + (parts.tail > 0 ? (remain / parts.tail) * tailSpan : tailSpan)),
+  };
+}
+
 function measureOpeningLength() {
   const full = measureCircleLength() * (1 + SCENE_TO_CIRCLE);
-  return Math.max(720, Math.round(full * OPENING_SCALE));
+  if (!mobileOpening()) return Math.max(720, Math.round(full * OPENING_SCALE));
+  return Math.max(720, Math.round(mobileOpeningSegments().total));
 }
 
 function detectQuality() {
